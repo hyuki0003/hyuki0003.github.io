@@ -271,10 +271,10 @@ h2 em { font-family:var(--sans); font-style:normal; font-weight:300; color:#9fb9
 .lander-console[data-state="crashed"] .lander-overlay > span { color:#e6b19e; }
 .lander-throttle { display:flex; align-items:center; gap:9px; color:#77939e; font:5px var(--mono); letter-spacing:.8px; margin-top:9px; }
 .lander-throttle > i { position:relative; display:block; height:3px; flex:1; background:#63828f33; }
-.lander-throttle b { position:absolute; inset:0 auto 0 0; width:40%; background:#a7d6c7; }
-.lander-throttle em { position:absolute; left:50%; top:-2px; height:7px; border-left:1px solid #cee4d466; }
+.lander-throttle b { position:absolute; inset:0 auto 0 0; width:0; background:#a7d6c7; }
+.lander-engine-state { min-width:20px; text-align:right; }
 .lander-status { min-height:31px; color:#a8bfc7; font:10px/1.65 var(--sans); margin:15px 0 10px; }
-.lander-controls { display:grid; grid-template-columns:repeat(2,44px) 1fr repeat(2,44px); gap:8px; }
+.lander-controls { display:grid; grid-template-columns:repeat(2,44px) 1fr 104px; gap:8px; }
 .lander-controls button { min-width:44px; min-height:40px; padding:0; border:1px solid #89b6b344; border-radius:5px; background:#a0c9c10a; color:#c8e5df; font:17px var(--sans); touch-action:none; user-select:none; }
 .lander-controls button:hover,.lander-controls button.is-held { background:#a7d8ce24; border-color:#a7d8ce99; }
 .lander-controls button:disabled { opacity:.4; cursor:default; }
@@ -288,3 +288,5 @@ h2 em { font-family:var(--sans); font-style:normal; font-weight:300; color:#9fb9
 @keyframes lander-arrival { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
 @media (max-width:620px) { .lander-console { inset:auto 12px 12px; width:auto; padding:17px; max-height:calc(100svh - 24px); }.lander-heading { margin-top:17px; }.lander-heading h2 { font-size:25px; }.lander-controls button { min-height:44px; } }
 @media (prefers-reduced-motion:reduce) { .landing-celebration #universe-title,.landing-celebration .space-tagline,.landing-celebration .space-manifesto,.landing-celebration .space-enter { text-shadow:0 0 18px #b0efcdaa; } }
+
+.lander-controls [data-control="up"] { display:flex; justify-content:center; align-items:center; gap:9px; }.lander-controls [data-control="up"] span { font:8px var(--mono); letter-spacing:1px; }
