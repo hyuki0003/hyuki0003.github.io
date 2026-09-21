@@ -11,7 +11,7 @@ window.createLatentPlanet = function createLatentPlanet(hero) {
   let scene, lastTime = 0, ready = false, textureReady = false;
   let program, locations, texture, ringTexture;
   function updateScene(seconds) {
-    const normal = normalize([-.35, .84, .50]);
+    const normal = normalize([-.35, .84, .40]);
     scene.normal = normal;
     scene.axis = normalize([normal[1], -normal[0], 0]);
     scene.other = cross(normal, scene.axis);

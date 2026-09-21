@@ -102,21 +102,21 @@
   let position = { x: 620, y: 620 };
   let flightId = 0, timer = 0, selected = -1;
   let automatic = false, finishFlight = null;
-  let orbitTime = 0, docked = -1, hoveredWorld = false, hoveredConsole = false;
+  let orbitTime = 0, docked = -1, hoveredConsole = false, shipDepth = 3;
   let orbitLayout = null, consoleSize = { width: 260, height: 210 }, positioned = false;
   const phases = worlds.map((_, index) => Math.PI * 1.15 + index * Math.PI * 2 / worlds.length);
   const descriptions = {
     introduction: ['Introduction', 'Meet the researcher exploring connections across signals.', 'Meet Dong-Hyuk Lee'],
     cv: ['CV', 'Experience, education, and the tools behind the research.', 'View curriculum vitae'],
     publications: ['Publication', 'Papers, manuscripts, and ideas at every stage.', 'Browse publications'],
-    research: ['Research', 'Representation learning, multimodal data, and physiological signals.', 'Explore research'],
+    research: ['Research', 'Contrastive learning, multimodal foundation models, and transferable representations.', 'Explore research'],
     contact: ['Contact', 'Start a conversation about research and collaboration.', 'Get in touch']
   };
   function measureOrbit() {
     if (!system) return;
     const rect = system.getBoundingClientRect();
     orbitLayout = { width: rect.width, height: rect.height,
-      radius: globes.map(globe => globe.offsetWidth / 2) };
+      shipWidth:voyager.offsetWidth, shipHeight:voyager.offsetHeight, radius: globes.map(globe => globe.offsetWidth / 2) };
     if (!positioned) {
       place({ x: window.innerWidth <= 800 ? 180 : 545, y: 690 * .76 }); positioned = true;
     }
@@ -131,24 +131,38 @@
     return { x: 700 + Math.cos(angle) * 225, y: 350 + Math.sin(angle) * 140, z: 0, scale: 1, occluded: false };
   }
   function dockingPosition(index) {
-    const point = planetPosition(index), radius = orbitLayout.radius[index];
+    const point = planetPosition(index), radius = orbitLayout.radius[index] * point.scale;
     return { x: point.x - radius * .10 / orbitLayout.width * 1000,
       y: point.y - radius * .82 / orbitLayout.height * 700 };
   }
   function updateOrbit(delta) {
     if (!orbitLayout) return;
-    const focusedControl = document.activeElement?.closest('.space-world, .ship-console');
-    if (!hoveredWorld && !hoveredConsole && !focusedControl && !finishFlight && docked < 0) orbitTime += delta * .000055;
+    orbitTime += delta * .000055;
     worlds.forEach((world, index) => {
       const point = planetPosition(index), x = point.x / 1000 * orbitLayout.width;
       world.style.left = '0px'; world.style.top = '0px';
       world.style.transform = `translate3d(${x}px,${point.y/700*orbitLayout.height}px,0) translate(-50%,-50%)`;
       world.style.setProperty('--caption-x', `${Math.max(62, Math.min(orbitLayout.width-62,x))-x}px`);
       globes[index].style.transform = `scale(${point.scale})`;
-      world.classList.toggle('is-occluded', point.occluded && index !== docked);
+      maskPlanet(globes[index], point, orbitLayout.radius[index]);
+      world.classList.toggle('is-behind', point.z < 0);
       world.style.zIndex = point.z > 0 ? '4' : '2';
     });
-    if (docked >= 0 && !finishFlight) { place(dockingPosition(docked)); positionConsole(); }
+    if (docked >= 0 && !finishFlight) { shipDepth=planetPosition(docked).z; place(dockingPosition(docked)); positionConsole(); }
+  }
+  function applyOcclusion(element, x, y, depth, width, height, scale = 1) {
+    const scene=planetRenderer?.getScene();
+    if (!scene || depth>=0) { element.style.maskImage='none'; element.style.webkitMaskImage='none'; element.dataset.occlusion='visible'; return; }
+    const cx=width/2+(scene.cx-x)/scale, cy=height/2+(scene.cy-y)/scale;
+    const radius=scene.scale/scale, distance=Math.hypot(x-scene.cx,y-scene.cy);
+    const extent=Math.max(width,height)*scale/2;
+    if (distance-extent>=scene.scale) { element.style.maskImage='none'; element.style.webkitMaskImage='none'; element.dataset.occlusion='visible'; return; }
+    const mask=`radial-gradient(circle ${radius}px at ${cx}px ${cy}px, transparent ${radius-.65}px, #000 ${radius+.65}px)`;
+    element.style.maskImage=mask; element.style.webkitMaskImage=mask;
+    element.dataset.occlusion=distance+extent<scene.scale?'hidden':'partial';
+  }
+  function maskPlanet(globe, point, radius) {
+    applyOcclusion(globe,point.x/1000*orbitLayout.width,point.y/700*orbitLayout.height,point.z,radius*2,radius*2,point.scale);
   }
   function drawOrbitTrack() {
     const route = system.querySelector('.space-orbit-track');
@@ -166,12 +180,13 @@
   function place(point) {
     position = point;
     voyager.style.left = `${point.x / 10}%`; voyager.style.top = `${point.y / 7}%`;
+    if (orbitLayout) applyOcclusion(voyager,point.x/1000*orbitLayout.width,point.y/700*orbitLayout.height,shipDepth,orbitLayout.shipWidth,orbitLayout.shipHeight);
   }
   function measureConsole() {
     consoleSize = { width: consolePanel.offsetWidth, height: consolePanel.offsetHeight };
   }
   function positionConsole() {
-    if (!consolePanel || consolePanel.hidden) return;
+    if (!consolePanel || consolePanel.hidden || hoveredConsole || consolePanel.contains(document.activeElement)) return;
     const x=position.x/1000*orbitLayout.width, y=position.y/700*orbitLayout.height;
     const left=Math.max(12,Math.min(orbitLayout.width-consoleSize.width-12,x-consoleSize.width/2));
     let top=y+46;
@@ -191,18 +206,20 @@
     if (keyboard) consoleLink.focus({preventScroll:true});
   }
   function travel(target, dockIndex = -1, keyboard = false) {
+    const fromDepth=shipDepth;
     docked = -1; hideConsole();
     voyager.dataset.state='flying';
     cancelAnimationFrame(flightId); finishFlight = null;
     const from = { ...position };
-    const control = { x: (from.x + target.x) / 2 + (target.y - from.y) * .22,
+    let control = { x: (from.x + target.x) / 2 + (target.y - from.y) * .22,
       y: Math.min(from.y,target.y) - Math.abs(target.x-from.x)*.12 - 35 };
-    const path = `M${from.x} ${from.y} Q${control.x} ${control.y} ${target.x} ${target.y}`;
+    let path = `M${from.x} ${from.y} Q${control.x} ${control.y} ${target.x} ${target.y}`;
     trail.setAttribute('d', path);
     const length = trail.getTotalLength();
     trail.style.strokeDasharray = String(length); trail.style.strokeDashoffset = String(length);
     function finish() {
       cancelAnimationFrame(flightId); flightId=0;
+      shipDepth=dockIndex>=0?planetPosition(dockIndex).z:3;
       place(dockIndex>=0 ? dockingPosition(dockIndex) : target); docked = dockIndex;
       voyager.dataset.state=dockIndex>=0?'landed':'idle';
       if (dockIndex>=0) voyager.style.setProperty('--heading','-12deg');
@@ -223,6 +240,15 @@
     function fly(now) {
       const progress = Math.min((now - start) / 1900, 1);
       const t = progress < .5 ? 4 * progress ** 3 : 1 - (-2 * progress + 2) ** 3 / 2;
+      // Recompute the intercept continuously; the destination never stops orbiting.
+      if (dockIndex>=0) {
+        target=dockingPosition(dockIndex);
+        control={x:(from.x+target.x)/2+(target.y-from.y)*.22,y:Math.min(from.y,target.y)-Math.abs(target.x-from.x)*.12-35};
+        path=`M${from.x} ${from.y} Q${control.x} ${control.y} ${target.x} ${target.y}`;
+        trail.setAttribute('d',path);
+      }
+      const targetDepth=dockIndex>=0?planetPosition(dockIndex).z:3;
+      shipDepth=fromDepth+(targetDepth-fromDepth)*t;
       place({ x: (1-t)**2*from.x+2*(1-t)*t*control.x+t*t*target.x,
         y: (1-t)**2*from.y+2*(1-t)*t*control.y+t*t*target.y });
       const dx=2*((1-t)*(control.x-from.x)+t*(target.x-control.x))*orbitLayout.width/1000;
@@ -241,6 +267,7 @@
   function showWorld(index, manual = true, keyboard = false) {
     if (manual) stopJourney();
     selected=index;
+    if(docked===index&&!finishFlight){openConsole(index,keyboard);return;}
     const world=worlds[index], [title]=descriptions[world.dataset.world];
     worlds.forEach((item,i)=>item.setAttribute('aria-pressed',String(index===i)));
     hero.querySelector('.space-destination').textContent=`DH–01 / APPROACHING ${title.toUpperCase()}`;
@@ -250,8 +277,6 @@
     travel(dockingPosition(index),index,keyboard);
   }
   worlds.forEach((world,index)=>{
-    world.addEventListener('pointerenter',()=>{hoveredWorld=true;});
-    world.addEventListener('pointerleave',()=>{hoveredWorld=false;});
     world.setAttribute('role','button');world.setAttribute('aria-pressed','false');
     world.addEventListener('click',event=>{
       if(event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
@@ -268,10 +293,8 @@
   });
   function dismissConsole() {
     const returnIndex=docked;
-    hideConsole();docked=-1;selected=-1;voyager.dataset.state='idle';
-    worlds.forEach(world=>world.setAttribute('aria-pressed','false'));
-    hero.querySelector('.space-destination').textContent='DH–01 / READY FOR DEPARTURE';
-    hero.querySelector('.space-description').textContent='Click open space to fly, or choose your next world.';
+    hideConsole();
+    if(docked>=0)hero.querySelector('.space-description').textContent='Click space to lift off, or choose another destination.';
     if(document.activeElement?.closest('.ship-console')&&returnIndex>=0)worlds[returnIndex].focus({preventScroll:true});
   }
   consoleClose?.addEventListener('click',()=>{stopJourney();dismissConsole();});

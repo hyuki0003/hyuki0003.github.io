@@ -10,9 +10,9 @@
     "github_username": "hyuki0003",
     "site_url": "https://hyuki0003.github.io",
     "headline": "Learning representations.\nUnderstanding signals.",
-    "intro": "I work at the intersection of representation learning and physiological signals, designing contrastive and multimodal objectives to uncover meaningful structure in biosignals.",
-    "about": "I am an AI Researcher at Medical AI Co., Ltd. My research spans physiological signal analysis and multimodal learning, from remote heart rate estimation and conversational emotion recognition to ECG-based diagnosis and foundation models.",
-    "collaboration": "ECG AI, biosignal processing, and clinical deep learning.",
+    "intro": "I explore contrastive learning and multimodal foundation models, seeking shared representations that transfer across modalities, tasks, and domains.",
+    "about": "I am an AI Researcher at Medical AI Co., Ltd. My broader research interests center on contrastive learning, multimodal foundation models, and transferable representations. I am interested in how learning across different modalities can reveal shared structure and support generalization to new tasks and domains.",
+    "collaboration": "Contrastive learning, multimodal foundation models, and representation learning across domains.",
     "updated": "September 2026",
     "updated_iso": "2026-09-21",
     "links": [
@@ -37,34 +37,34 @@
   "research": [
     {
       "id": "01",
-      "title": "ECG-based diagnosis",
-      "description": "Multi-label cardiac abnormality detection and deep learning for disease screening.",
-      "label": "DIAGNOSIS",
+      "title": "Contrastive representation learning",
+      "description": "Learning meaningful structure through relationships between samples, views, and modalities.",
+      "label": "CONTRASTIVE LEARNING",
       "symbol": "grid"
     },
     {
       "id": "02",
-      "title": "ECG foundation models",
-      "description": "Constructing and optimizing foundation models for electrocardiograms.",
-      "label": "FOUNDATION MODELS",
+      "title": "Multimodal foundation models",
+      "description": "Exploring shared representations and scalable learning across different forms of data.",
+      "label": "MULTIMODAL FOUNDATION MODELS",
       "symbol": "layers"
     },
     {
       "id": "03",
-      "title": "Beyond the waveform",
-      "description": "Representation learning to explore hidden physiological states beyond the observed signal.",
-      "label": "REPRESENTATION LEARNING",
+      "title": "Transfer & generalization",
+      "description": "Studying how representations carry useful knowledge across tasks, datasets, and domains.",
+      "label": "GENERALIZATION",
       "symbol": "orbit"
     }
   ],
   "keywords": [
-    "ECG Deep Learning",
-    "Cardiac Age Estimation",
-    "Biosignal Processing",
-    "Multimodal Learning",
     "Contrastive Learning",
-    "eXplainable AI",
-    "Emotion Recognition"
+    "Multimodal Foundation Models",
+    "Representation Learning",
+    "Cross-Modal Alignment",
+    "Self-Supervised Learning",
+    "Transfer Learning",
+    "Generalization"
   ],
   "publications": [
     {
