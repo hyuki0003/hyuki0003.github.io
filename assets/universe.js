@@ -12,6 +12,8 @@
   let heroVisible = true;
   let camera = { x: 0, y: 0 };
   let pointer = { x: 0, y: 0 };
+  let sceneTime = 0;
+  const planetRenderer = hero && window.createLatentPlanet?.(hero);
   const canvas = document.createElement('canvas');
   canvas.id = 'space-stars';
   canvas.setAttribute('aria-hidden', 'true');
@@ -28,6 +30,8 @@
     canvas.width = Math.round(width * ratio); canvas.height = Math.round(height * ratio);
     canvas.style.width = `${width}px`; canvas.style.height = `${height}px`;
     ctx?.setTransform(ratio, 0, 0, ratio, 0, 0);
+    planetRenderer?.resize();
+    measureOrbit();
     paint(0);
   }
   function paint(delta) {
@@ -48,6 +52,9 @@
       camera.x += (pointer.x - camera.x) * .06;
       camera.y += (pointer.y - camera.y) * .06;
       if (hero && heroVisible) {
+        sceneTime += delta / 1000;
+        updateOrbit(delta);
+        planetRenderer?.draw(sceneTime);
         hero.style.setProperty('--camera-x', `${camera.x}px`);
         hero.style.setProperty('--camera-y', `${camera.y}px`);
       }
@@ -87,18 +94,56 @@
   let flightId = 0, timer = 0, selected = -1;
   let automatic = false;
   let finishFlight = null;
+  let orbitTime = 0, docked = -1, hoveredWorld = false;
+  let orbitLayout = null;
+  const phases = [Math.PI * 1.5, 0, Math.PI * .5, Math.PI];
+  function measureOrbit() {
+    if (!system) return;
+    const rect = system.getBoundingClientRect();
+    const compact = window.innerWidth <= 800;
+    orbitLayout = { cx: compact ? 500 : 760, cy: 350, rx: compact ? 310 : 160, ry: compact ? 224 : 203,
+      offsets: worlds.map(world => {
+        const bounds = world.getBoundingClientRect(), globe = world.querySelector('.world-globe').getBoundingClientRect();
+        return { x: (globe.left + globe.width / 2 - bounds.left - bounds.width / 2) / rect.width * 1000,
+          y: (globe.top + globe.height / 2 - bounds.top - bounds.height / 2) / rect.height * 700 };
+      }) };
+    const ellipse = system.querySelector('.space-routes > ellipse');
+    for (const key of ['cx', 'cy', 'rx', 'ry']) ellipse.setAttribute(key, orbitLayout[key]);
+    ellipse.removeAttribute('transform');
+    updateOrbit(0);
+  }
+  function planetPosition(index) {
+    const angle = phases[index] + orbitTime;
+    return { x: orbitLayout.cx + Math.cos(angle) * orbitLayout.rx, y: orbitLayout.cy + Math.sin(angle) * orbitLayout.ry };
+  }
+  function dockingPosition(index) {
+    const point = planetPosition(index), offset = orbitLayout.offsets[index];
+    return { x: Math.max(40, Math.min(940, point.x + offset.x - 25)), y: Math.max(30, point.y + offset.y - 65) };
+  }
+  function updateOrbit(delta) {
+    if (!orbitLayout) return;
+    // Hold moving targets while a pointer or keyboard user is selecting one.
+    const focusedWorld = document.activeElement?.closest('.space-world');
+    if (!hoveredWorld && !focusedWorld && !finishFlight) orbitTime += delta * .00004;
+    worlds.forEach((world, index) => {
+      const point = planetPosition(index);
+      world.style.left = `${point.x / 10}%`; world.style.top = `${point.y / 7}%`;
+    });
+    system.querySelector('.space-routes > ellipse').style.strokeDashoffset = String(-sceneTime * 3);
+    if (docked >= 0 && !finishFlight) place(dockingPosition(docked));
+  }
   const descriptions = {
     ecg: ['ECG / BIOSIGNALS', 'Learning representations of the heart, from diagnosis to ECG foundation models.', 'Explore ECG research'],
     vision: ['VISION / PERCEPTION', 'Finding physiological signals in facial video through contrastive learning.', 'Explore remote heart rate estimation'],
-    audio: ['AUDIO / RESONANCE', 'Connecting speech, language, and visual cues to understand emotion.', 'Explore multimodal emotion recognition'],
-    text: ['TEXT / LANGUAGE', 'Exploring dialogue context and the shared representations of emotion.', 'Explore inter-dialog learning'],
+    emotion: ['EMOTION RECOGNITION / TEXT + AUDIO', 'Connecting language, speech, and visual cues to understand emotion in conversations.', 'Explore multimodal emotion recognition'],
     wearables: ['WEARABLES / PHYSIOLOGY', 'Exploring multimodal physiological markers from wearable biosignals.', 'Explore wearable physiomarkers']
   };
   function place(point) {
     position = point;
     voyager.style.left = `${point.x / 10}%`; voyager.style.top = `${point.y / 7}%`;
   }
-  function travel(target) {
+  function travel(target, dockIndex = -1) {
+    docked = -1;
     cancelAnimationFrame(flightId); finishFlight = null;
     const from = { ...position };
     const control = { x: (from.x + target.x) / 2 + (target.y - from.y) * .24,
@@ -108,7 +153,7 @@
     const length = trail.getTotalLength();
     trail.style.strokeDasharray = String(length); trail.style.strokeDashoffset = String(length);
     function finish() {
-      cancelAnimationFrame(flightId); place(target);
+      cancelAnimationFrame(flightId); place(target); docked = dockIndex;
       const memory = document.createElementNS('http://www.w3.org/2000/svg', 'path');
       memory.setAttribute('d', path); memories.append(memory);
       while (memories.children.length > 3) memories.firstElementChild.remove();
@@ -141,13 +186,11 @@
     hero.querySelector('.space-description').textContent = text;
     const link = hero.querySelector('.space-related'); link.href = world.href; link.textContent = `${label} ↗`;
     if (manual) announcement.textContent = `${title}. ${text}`;
-    const rect = system.getBoundingClientRect();
-    const planet = world.querySelector('.world-globe').getBoundingClientRect();
-    const x = (planet.left + planet.width / 2 - rect.left) / rect.width * 1000;
-    const y = (planet.top + planet.height / 2 - rect.top) / rect.height * 700;
-    travel({ x: Math.max(40, Math.min(940, x - 25)), y: Math.max(30, y - 65) });
+    travel(dockingPosition(index), index);
   }
   worlds.forEach((world, index) => {
+    world.addEventListener('pointerenter', () => { hoveredWorld = true; });
+    world.addEventListener('pointerleave', () => { hoveredWorld = false; });
     world.setAttribute('role', 'button'); world.setAttribute('aria-pressed', 'false');
     world.addEventListener('click', event => {
       if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
@@ -165,7 +208,7 @@
   });
   system?.addEventListener('click', event => {
     if (event.target.closest('.space-world') || event.detail === 0) return;
-    stopJourney(); worlds.forEach(world => world.setAttribute('aria-pressed', 'false'));
+    stopJourney(); selected = -1; docked = -1; worlds.forEach(world => world.setAttribute('aria-pressed', 'false'));
     const rect = system.getBoundingClientRect();
     travel({ x: Math.max(35, Math.min(940, (event.clientX - rect.left) / rect.width * 1000)),
       y: Math.max(30, Math.min(650, (event.clientY - rect.top) / rect.height * 700)) });

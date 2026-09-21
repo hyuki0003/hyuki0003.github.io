@@ -161,6 +161,7 @@ def page(title: str, body: str, data: dict, prefix: str = '', active: str = '', 
     template = template.replace('<div class="header-controls">', '<div class="header-controls"><button class="space-motion" type="button" aria-label="Pause space motion" aria-pressed="false" hidden>Ⅱ</button>')
     template = template.replace('<meta name="theme-color" content="#f6f5f1">', '<meta name="theme-color" content="#050b10">')
     if not canonical_path:
+        template = template.replace('<script src="assets/universe.js"', '<script src="assets/planet.js" defer></script>\n<script src="assets/universe.js"')
         template = template.replace('</head>', '<link rel="preload" as="image" href="assets/space/latent-universe.webp">\n</head>')
     return template
 
