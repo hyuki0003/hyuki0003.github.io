@@ -205,21 +205,57 @@
     announcement.textContent=`Landed on ${title}. ${label} is available in the landing message.`;
     if (keyboard) consoleLink.focus({preventScroll:true});
   }
-  // A single 3D curve controls both projection and depth. Interpolating direction
-  // and radius separately keeps the entire hull outside the planet's sphere.
+  // Fly directly when clear. Otherwise join two tangents with the shortest arc
+  // on the hull-clearance sphere, rather than following the satellites' radius.
   function createFlightPath(from, initialTarget, clearance) {
     const unit = vector => { const length=Math.hypot(...vector); return vector.map(v=>v/length); };
-    const startRadius=Math.hypot(...from), a=unit(from), b=unit(initialTarget);
-    const sum=a.map((v,i)=>v+b[i]);
-    // Fix the turning side at launch, including nearly opposite destinations.
-    // A moving destination must never flip the route through the planet's core.
-    const control=Math.hypot(...sum)>.35 ? unit(sum) :
-      unit(Math.hypot(a[0],a[1])>.1 ? [-a[1],a[0],0] : [1,0,0]);
+    const dot=(a,b)=>a.reduce((sum,v,i)=>sum+v*b[i],0);
+    const mix=(a,b,t)=>a.map((v,i)=>v+(b[i]-v)*t);
+    const a=unit(from), b=unit(initialTarget), alignment=dot(a,b);
+    // Near opposite endpoints, retain one turning side throughout interception.
+    // Both legs still hug the clearance sphere; neither can flip through it.
+    const rejection=b.map((v,i)=>v-alignment*a[i]);
+    const side=Math.hypot(...rejection)>.05?unit(rejection):
+      unit(Math.hypot(a[0],a[1])>.1?[-a[1],a[0],0]:[1,0,0]);
+    const waypoint=alignment<-.94?side.map(v=>v*clearance):null;
+    function segment(start,end) {
+      const startRadius=Math.hypot(...start), endRadius=Math.hypot(...end);
+      const u=unit(start), v=unit(end), cosine=Math.max(-1,Math.min(1,dot(u,v)));
+      const angle=Math.acos(cosine), departure=Math.acos(Math.min(1,clearance/startRadius));
+      const arrival=Math.acos(Math.min(1,clearance/endRadius));
+      if(angle<=departure+arrival+1e-10) {
+        return {length:Math.hypot(...end.map((x,i)=>x-start[i])),at:t=>mix(start,end,t)};
+      }
+      const axis=unit(v.map((x,i)=>x-cosine*u[i]));
+      const onArc=theta=>u.map((x,i)=>clearance*(x*Math.cos(theta)+axis[i]*Math.sin(theta)));
+      const enter=onArc(departure), leave=onArc(angle-arrival);
+      const first=Math.sqrt(Math.max(0,startRadius**2-clearance**2));
+      const arc=clearance*(angle-departure-arrival);
+      const last=Math.sqrt(Math.max(0,endRadius**2-clearance**2));
+      const length=first+arc+last;
+      return {length,at:t=>{
+        const distance=t*length;
+        if(first>1e-8&&distance<first)return mix(start,enter,distance/first);
+        if(distance<=first+arc)return onArc(departure+(distance-first)/clearance);
+        return last>1e-8?mix(leave,end,(distance-first-arc)/last):end;
+      }};
+    }
+    let cachedTarget, legs, length;
     return (progress, target=initialTarget) => {
-      const t=Math.max(0,Math.min(1,progress)), endRadius=Math.hypot(...target), end=unit(target);
-      const direction=unit(a.map((v,i)=>(1-t)**2*v+2*(1-t)*t*control[i]+t*t*end[i]));
-      const radius=Math.max(clearance,(1-t)*startRadius+t*endRadius)+.14*Math.sin(Math.PI*t)**2;
-      return direction.map(v=>v*radius);
+      const t=Math.max(0,Math.min(1,progress));
+      if(t===0)return from;
+      if(t===1)return target;
+      if(target!==cachedTarget) {
+        cachedTarget=target;
+        legs=waypoint?[segment(from,waypoint),segment(waypoint,target)]:[segment(from,target)];
+        length=legs.reduce((sum,leg)=>sum+leg.length,0);
+      }
+      let distance=t*length;
+      for(const leg of legs) {
+        if(distance<=leg.length)return leg.at(leg.length>1e-8?distance/leg.length:1);
+        distance-=leg.length;
+      }
+      return target;
     };
   }
   function travel(target, dockIndex = -1, keyboard = false) {
@@ -233,7 +269,7 @@
     const toScreen=point=>({x:(scene.cx+point[0]*scene.scale)/orbitLayout.width*1000,
       y:(scene.cy-point[1]*scene.scale)/orbitLayout.height*700});
     const destination=()=>toSpace(dockIndex>=0?dockingPosition(dockIndex):target,dockIndex>=0?planetPosition(dockIndex).z:3);
-    const clearance=1+Math.hypot(orbitLayout.shipWidth,orbitLayout.shipHeight)/2/scene.scale+.12;
+    const clearance=1+Math.hypot(orbitLayout.shipWidth,orbitLayout.shipHeight)/2/scene.scale+.08;
     const route=createFlightPath(toSpace(position,fromDepth),destination(),clearance);
     let path='';
     trail.style.strokeDasharray='none'; trail.style.strokeDashoffset='0';

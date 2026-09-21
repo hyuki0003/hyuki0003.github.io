@@ -38,7 +38,7 @@ main, .contact-section, .site-footer { position:relative; z-index:1; }
 .space-intro a { pointer-events:auto; }
 .space-eyebrow { display:flex; gap:10px; align-items:center; color:#b4c8cc; font:8px/1.5 var(--mono); letter-spacing:2px; margin-bottom:19px; }
 .space-eyebrow > span { width:5px; height:5px; background:#bbe5d1; border-radius:50%; box-shadow:0 0 12px #bbe5d199; }
-.space-intro h1 { font-size:clamp(64px,6.4vw,106px); line-height:.98; font-weight:300; letter-spacing:-.035em; margin-left:-4px; color:#ecf3f1; text-shadow:0 3px 40px #010b11; }
+.space-intro h1 { white-space:nowrap; font-size:clamp(64px,6.4vw,106px); line-height:.98; font-weight:300; letter-spacing:-.035em; margin-left:-4px; color:#ecf3f1; text-shadow:0 3px 40px #010b11; }
 .space-intro h1 span { color:#93c6bd; }
 .space-tagline { font-size:clamp(23px,2.5vw,39px); line-height:1.24; font-weight:300; letter-spacing:-.8px; margin-top:26px; }
 .space-tagline em { color:#a9c3c9; font-style:normal; }
@@ -180,7 +180,7 @@ h2 em { font-family:var(--sans); font-style:normal; font-weight:300; color:#9fb9
  .header-inner { min-height:76px; }.brand-name { font-size:12px; letter-spacing:2px; }.brand-name > span { font-size:5px; }.monogram { width:28px;height:28px; }.monogram::after { width:39px; }.header-controls { gap:8px; }.space-motion { width:30px;height:30px; }
  .js .site-nav { top:75px; background:#07121bf5; backdrop-filter:blur(20px); border-color:#45606c55; }.js .site-nav > a { font-size:12px; }
  .space-hero { min-height:960px; height:960px; }.space-coordinates { left:20px; top:108px; font-size:5px; letter-spacing:1.3px; }.space-intro { top:140px; left:20px; width:calc(100% - 40px); }
- .space-eyebrow { font-size:6px; letter-spacing:1.3px; margin-bottom:19px; }.space-intro h1 { font-size:clamp(46px,12vw,66px); letter-spacing:-.035em; margin-left:-2px; }.space-tagline { font-size:22px; margin-top:16px; }.space-manifesto { font-size:10px; margin-top:15px; }.space-enter { font-size:10px; margin-top:13px; }
+ .space-eyebrow { font-size:6px; letter-spacing:1.3px; margin-bottom:19px; }.space-intro h1 { font-size:clamp(36px,11.2vw,66px); letter-spacing:-.035em; margin-left:-2px; }.space-tagline { font-size:22px; margin-top:16px; }.space-manifesto { font-size:10px; margin-top:15px; }.space-enter { font-size:10px; margin-top:13px; }
  .space-depth { inset:240px -110% 80px -160%; mask-image:linear-gradient(transparent,#000 18%,#000 85%,transparent); }.space-image { background-position:65% 50%; }.space-shade { background:linear-gradient(#03090e 2%,#03090e22 53%,transparent 65%,#050b10 87%); }
  .space-system { top:430px; bottom:135px; }.space-world { width:40px; height:40px; min-width:40px; min-height:40px; }.world-globe { width:34px;height:34px;flex-basis:34px; }.world-caption { top:calc(100% + 5px); width:112px; }.world-caption { gap:4px; }.world-caption small { font-size:4px; letter-spacing:.8px; }.world-caption strong { font-size:10px; }.space-world.world-ecg { --px:44% !important; --py:15% !important; }.world-vision { --px:82% !important; --py:33% !important; }.world-wearables { --px:81% !important; --py:83% !important; }
  .space-field-label { font-size:5px; left:54%; top:40%; }.space-field-label b { font-size:4px; }.voyager-name { font-size:6px; }.voyager-name small { font-size:4px; }.voyager-ship { font-size:25px; }
