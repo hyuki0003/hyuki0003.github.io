@@ -11,7 +11,7 @@
     "site_url": "https://hyuki0003.github.io",
     "headline": "Learning representations.\nUnderstanding signals.",
     "intro": "I explore contrastive learning and multimodal foundation models, seeking shared representations that transfer across modalities, tasks, and domains.",
-    "about": "I am an AI Researcher at Medical AI Co., Ltd. My broader research interests center on contrastive learning, multimodal foundation models, and transferable representations. I am interested in how learning across different modalities can reveal shared structure and support generalization to new tasks and domains.",
+    "about": "Now I am an AI Researcher at Medical AI Co., Ltd. My broader research interests center on contrastive learning, multimodal foundation models, and transferable representations. I am interested in how learning across different modalities can reveal shared structure and support generalization to new tasks and domains.",
     "collaboration": "Contrastive learning, multimodal foundation models, and representation learning across domains.",
     "updated": "September 2026",
     "updated_iso": "2026-09-21",
@@ -181,7 +181,7 @@
       "category": "manuscript",
       "year": 2026,
       "venue": "IEEE JBHI",
-      "title": "Identifying Wearable Multimodal Physiomarkers under Graded Alcohol Craving Level During VR Cue Elicitation",
+      "title": "Multimodal Candidate Physiological Markers of VR-Elicited Graded Alcohol Craving in Outpatients With Alcohol Use Disorder",
       "authors": [
         "D. H. Kim",
         "M. S. Lee",
@@ -190,7 +190,7 @@
         "Y.-S. Choi",
         "et al."
       ],
-      "status": "In progress",
+      "status": "Under review",
       "badges": [],
       "tags": [
         "Wearable biosignals",
@@ -198,7 +198,8 @@
       ],
       "citation_type": "unpublished",
       "paper_url": "",
-      "code_url": ""
+      "code_url": "",
+      "date": "2026.09"
     },
     {
       "id": "biomarker-correlation",
@@ -407,6 +408,11 @@
     }
   ],
   "news": [
+    {
+      "date": "2026.09",
+      "label": "MANUSCRIPT",
+      "text": "Multimodal Candidate Physiological Markers of VR-Elicited Graded Alcohol Craving in Outpatients With Alcohol Use Disorder has been submitted to IEEE JBHI and is under review."
+    },
     {
       "date": "2026.08",
       "label": "MANUSCRIPT",

@@ -17,8 +17,8 @@ window.PROFILE_CITATIONS = {
     "bibtex": "@unpublished{crossmodal2026,\n  title = {Cross-Modal Alignment for Robust Multimodal Fusion in Conversational Emotion Recognition},\n  author = {Kim, D. H. and Lee, D.-H. and Choi, Y.-S.},\n  year = {2026},\n  note = {Under review; venue listed in author profile: IEEE ESWA}\n}"
   },
   "wearable-physiomarkers": {
-    "title": "Identifying Wearable Multimodal Physiomarkers under Graded Alcohol Craving Level During VR Cue Elicitation",
-    "bibtex": "@unpublished{wearablephysiomarkers2026,\n  title = {Identifying Wearable Multimodal Physiomarkers under Graded Alcohol Craving Level During VR Cue Elicitation},\n  author = {Kim, D. H. and Lee, M. S. and Lee, D.-H. and Lee, J.-Y. and Choi, Y.-S. and others},\n  year = {2026},\n  note = {In progress; venue listed in author profile: IEEE JBHI}\n}"
+    "title": "Multimodal Candidate Physiological Markers of VR-Elicited Graded Alcohol Craving in Outpatients With Alcohol Use Disorder",
+    "bibtex": "@unpublished{wearablephysiomarkers2026,\n  title = {Multimodal Candidate Physiological Markers of VR-Elicited Graded Alcohol Craving in Outpatients With Alcohol Use Disorder},\n  author = {Kim, D. H. and Lee, M. S. and Lee, D.-H. and Lee, J.-Y. and Choi, Y.-S. and others},\n  year = {2026},\n  note = {Under review; venue listed in author profile: IEEE JBHI}\n}"
   },
   "biomarker-correlation": {
     "title": "Correlation Analysis of Biomarkers using Multimodal Biosignals for Detecting Craving States in Patients with Substance Use Disorder",

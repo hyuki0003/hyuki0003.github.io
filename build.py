@@ -165,7 +165,7 @@ def page(title: str, body: str, data: dict, prefix: str = '', active: str = '', 
         template = template.replace('<script src="assets/universe.js"', '<script src="assets/planet.js" defer></script>\n<script src="assets/lander.js" defer></script>\n<script src="assets/universe.js"')
         template = template.replace('</head>', '<link rel="preload" as="image" href="assets/space/latent-atmosphere.webp">\n</head>')
     # Keep HTML, controls, and shaders in sync for returning visitors.
-    for asset in ("assets/universe.css", "assets/universe.js", "assets/planet.js", "assets/lander.js"):
+    for asset in ("assets/universe.css", "assets/universe.js", "assets/planet.js", "assets/lander.js", "assets/citations.js"):
         digest = hashlib.sha256((ROOT / asset).read_bytes()).hexdigest()[:10]
         template = template.replace(asset + '"', asset + "?v=" + digest + '"')
     return template
@@ -206,7 +206,9 @@ def home(data: dict) -> str:
     return '<main id="main">' + universe.replace('PROFILE_INTRO', esc(data['profile']['intro'])) + '</main>'
 
 
-def destination_heading(label: str, title: str, description: str) -> str:
+def destination_heading(label: str, title: str, description: str, portrait: bool = False) -> str:
+    if portrait:
+        return f'<header class="destination-heading cv-heading container"><a class="breadcrumb" href="index.html">{icon("back")} Back to the orbit</a><div class="cv-summary"><div><p class="eyebrow section-index">{esc(label)}</p><h1>{title}</h1><p class="destination-lead">{esc(description)}</p></div><figure class="cv-portrait"><img src="assets/profile/dong-hyuk-lee.jpg" alt="Portrait of Dong-Hyuk Lee" width="378" height="496" decoding="async"><figcaption>Dong-Hyuk Lee<span>AI Researcher</span></figcaption></figure></div></header>'
     return f'<header class="destination-heading container"><a class="breadcrumb" href="index.html">{icon("back")} Back to the orbit</a><p class="eyebrow section-index">{esc(label)}</p><h1>{title}</h1><p class="destination-lead">{esc(description)}</p></header>'
 
 
@@ -215,7 +217,7 @@ def destinations(data: dict) -> dict:
     sections = research_and_cv(data)
     introduction = destination_heading('01 / INTRODUCTION', 'Across signals.<br><em>Beyond boundaries.</em>', profile['role'])
     introduction += f'<section class="introduction-copy container"><div><p class="eyebrow">DONG-HYUK LEE</p><h2>Learning representations.<br><em>Understanding signals.</em></h2></div><div><p>{esc(profile["about"])}</p><p>{esc(profile["intro"])}</p><div class="destination-actions"><a class="button primary" href="research.html">Explore research {icon("arrow")}</a><a class="text-link" href="cv.html">View CV {icon("external")}</a></div></div></section>'
-    cv = destination_heading('02 / CV', 'Curriculum <em>vitae.</em>', 'Experience, education, and the tools behind my research.')
+    cv = destination_heading('02 / CV', 'Curriculum <em>vitae.</em>', 'Experience, education, and the tools behind my research.', portrait=True)
     cv += sections['cv'].replace('04 / BACKGROUND', 'ACADEMIC &amp; PROFESSIONAL BACKGROUND').replace('A little <em>about me.</em>', 'Experience &amp; <em>education.</em>')
     research = destination_heading('04 / RESEARCH', 'A shared <em>latent space.</em>', 'Contrastive learning, multimodal foundation models, and representations that generalize across domains.') + sections['research']
     contact = destination_heading('05 / CONTACT', 'Let’s <em>connect.</em>', 'Open to research collaboration and thoughtful conversations.')
@@ -284,6 +286,9 @@ def main() -> None:
         validate(data)
     except (OSError, json.JSONDecodeError, ValueError, KeyError, TypeError) as exc:
         raise SystemExit(f'Cannot build website: {exc}') from exc
+    # Local JS data avoids fetch/CORS restrictions when opening index.html directly.
+    citations={item['id']:{'title':item['title'],'bibtex':bibtex(item)} for item in data['publications']}
+    (ROOT/'assets/citations.js').write_text('"use strict";\nwindow.PROFILE_CITATIONS = '+json.dumps(citations,ensure_ascii=False,indent=2).replace('</','<\\/')+';\n',encoding='utf-8')
     p = data['profile']
     (ROOT/'index.html').write_text(page(f"{p['name']} — AI Researcher",home(data),data,full_footer=False),encoding='utf-8')
     for name, body in destinations(data).items():
@@ -298,9 +303,6 @@ def main() -> None:
             (ROOT/path).write_text(page(f"{paper['title']} — {p['name']}",project(paper,data),data,prefix='../',active='publications',canonical_path=path,full_footer=False),encoding='utf-8')
     not_found='''<main id="main" class="container not-found"><span class="eyebrow">404 / PAGE NOT FOUND</span><h1>A little <em>off track.</em></h1><p>This page does not exist. Let’s return to the research.</p><a class="button primary" href="/index.html">Back to home →</a></main>'''
     (ROOT/'404.html').write_text(page(f"Page not found — {p['name']}",not_found,data,prefix='/',full_footer=False,canonical_path='404.html'),encoding='utf-8')
-    # Local JS data avoids fetch/CORS restrictions when opening index.html directly.
-    citations={item['id']:{'title':item['title'],'bibtex':bibtex(item)} for item in data['publications']}
-    (ROOT/'assets/citations.js').write_text('"use strict";\nwindow.PROFILE_CITATIONS = '+json.dumps(citations,ensure_ascii=False,indent=2).replace('</','<\\/')+';\n',encoding='utf-8')
     paths=['','introduction.html','cv.html','publications.html','research.html','contact.html']+[f"projects/{p['id']}.html" for p in data['publications'] if p.get('page')]
     sitemap='<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'+''.join(f'<url><loc>{esc(data["profile"]["site_url"].rstrip("/")+"/"+path)}</loc><lastmod>{esc(data["profile"]["updated_iso"])}</lastmod></url>\n' for path in paths)+'</urlset>\n'
     (ROOT/'sitemap.xml').write_text(sitemap,encoding='utf-8')
