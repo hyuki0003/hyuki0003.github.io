@@ -155,6 +155,8 @@ def page(title: str, body: str, data: dict, prefix: str = '', active: str = '', 
     }
     for key, value in values.items():
         template = template.replace('{{' + key + '}}', value)
+    if not canonical_path:
+        template = template.replace('</head>', '<link rel="stylesheet" href="assets/orbit.css">\n  <script src="assets/orbit.js" defer></script>\n</head>')
     return template
 
 
@@ -182,7 +184,7 @@ def home(data: dict) -> str:
     keywords = ''.join(f'<span>{esc(t)}</span>' for t in data['keywords'])
     return f'''<main id="main">
       <section class="hero container" aria-labelledby="hero-title"><div class="hero-grid"><div class="hero-copy"><p class="hero-eyebrow"><span class="live-dot"></span> AI RESEARCHER <span class="eyebrow-divider">/</span> MEDICAL AI</p><h1 id="hero-title">{esc(p['name'])}<span class="name-dot">.</span></h1><p class="hero-statement">{statement}</p><p class="hero-description">{esc(p['intro'])}</p><div class="hero-actions"><a class="button primary" href="#selected-work">View selected work {icon('arrow')}</a><a class="text-link" href="mailto:{esc(p['email'])}">Get in touch {icon('external')}</a></div></div>
-      <div class="hero-visual" aria-hidden="true"><div class="visual-top"><span>RESEARCH NOTES</span><span>VOL. 01 / 2026</span></div><div class="orbit-scene"><div class="sphere-grid"></div><div class="sphere sphere-a"></div><div class="sphere sphere-b"></div><div class="sphere sphere-c"></div><div class="sphere-core"></div><div class="orbit-dot dot-a"></div><div class="orbit-dot dot-b"></div><span class="axis-mark axis-a">+</span><span class="axis-mark axis-b">+</span></div><div class="visual-bottom"><span>Different modalities.<br><strong>Meaningful representations.</strong></span><span class="visual-spark">✳</span></div></div></div>
+      {(ROOT/'templates/orbit.html').read_text(encoding='utf-8')}</div>
       <div class="hero-facts"><div><span>CURRENTLY</span><p>Medical AI Co., Ltd.</p></div><div><span>PREVIOUSLY</span><p>NeuroAI Lab. · Kwangwoon Univ.</p></div><div><span>RESEARCH INTERESTS</span><p>Representation · Multimodal · Biosignals</p></div></div></section>
       <section class="section research-section" id="research" aria-labelledby="research-title"><div class="container"><div class="section-heading"><div><span class="eyebrow section-index">01 / RESEARCH</span><h2 id="research-title">A common thread.<br><em>Across different signals.</em></h2></div><p>From facial videos and conversations<br class="desktop-break"> to wearable biosignals and ECGs.</p></div><div class="research-grid">{research}</div><div class="keyword-strip">{keywords}</div></div></section>
       <section class="section selected-section container" id="selected-work" aria-labelledby="work-title"><div class="section-heading"><div><span class="eyebrow section-index">02 / SELECTED WORK</span><h2 id="work-title">Ideas into <em>research.</em></h2></div><a class="text-link" href="publications.html">All publications {icon('arrow')}</a></div><div class="works-grid">{''.join(works)}</div><a class="archive-note" href="publications.html#manuscript"><span class="archive-dot"></span><span>Also exploring global-local contrastive learning, cross-modal alignment, and wearable physiomarkers.</span>{icon('arrow')}</a></section>
