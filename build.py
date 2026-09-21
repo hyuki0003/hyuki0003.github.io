@@ -155,8 +155,13 @@ def page(title: str, body: str, data: dict, prefix: str = '', active: str = '', 
     }
     for key, value in values.items():
         template = template.replace('{{' + key + '}}', value)
+    template = template.replace('</head>', f'<link rel="stylesheet" href="{prefix}assets/universe.css">\n<script src="{prefix}assets/universe.js" defer></script>\n<script>document.documentElement.dataset.theme="dark"</script>\n</head>')
+    template = template.replace('<body id="top">', '<body id="top" class="universe-site' + (' universe-home' if not canonical_path else '') + '">')
+    template = template.replace('<span class="brand-name">Dong-Hyuk Lee<span>AI RESEARCHER</span></span>', '<span class="brand-name">Latent<span>BY DONG-HYUK LEE</span></span>')
+    template = template.replace('<div class="header-controls">', '<div class="header-controls"><button class="space-motion" type="button" aria-label="Pause space motion" aria-pressed="false" hidden>Ⅱ</button>')
+    template = template.replace('<meta name="theme-color" content="#f6f5f1">', '<meta name="theme-color" content="#050b10">')
     if not canonical_path:
-        template = template.replace('</head>', '<link rel="stylesheet" href="assets/orbit.css">\n  <script src="assets/orbit.js" defer></script>\n</head>')
+        template = template.replace('</head>', '<link rel="preload" as="image" href="assets/space/latent-universe.webp">\n</head>')
     return template
 
 
@@ -183,9 +188,7 @@ def home(data: dict) -> str:
     stack = ''.join(f'<div class="stack-row"><span>{esc(s["category"])}</span><p>{" · ".join(esc(x) for x in s["items"])}</p></div>' for s in data['stack'])
     keywords = ''.join(f'<span>{esc(t)}</span>' for t in data['keywords'])
     return f'''<main id="main">
-      <section class="hero container" aria-labelledby="hero-title"><div class="hero-grid"><div class="hero-copy"><p class="hero-eyebrow"><span class="live-dot"></span> AI RESEARCHER <span class="eyebrow-divider">/</span> MEDICAL AI</p><h1 id="hero-title">{esc(p['name'])}<span class="name-dot">.</span></h1><p class="hero-statement">{statement}</p><p class="hero-description">{esc(p['intro'])}</p><div class="hero-actions"><a class="button primary" href="#selected-work">View selected work {icon('arrow')}</a><a class="text-link" href="mailto:{esc(p['email'])}">Get in touch {icon('external')}</a></div></div>
-      {(ROOT/'templates/orbit.html').read_text(encoding='utf-8')}</div>
-      <div class="hero-facts"><div><span>CURRENTLY</span><p>Medical AI Co., Ltd.</p></div><div><span>PREVIOUSLY</span><p>NeuroAI Lab. · Kwangwoon Univ.</p></div><div><span>RESEARCH INTERESTS</span><p>Representation · Multimodal · Biosignals</p></div></div></section>
+      {(ROOT/'templates/universe.html').read_text(encoding='utf-8').replace('PROFILE_INTRO', esc(p['intro']))}
       <section class="section research-section" id="research" aria-labelledby="research-title"><div class="container"><div class="section-heading"><div><span class="eyebrow section-index">01 / RESEARCH</span><h2 id="research-title">A common thread.<br><em>Across different signals.</em></h2></div><p>From facial videos and conversations<br class="desktop-break"> to wearable biosignals and ECGs.</p></div><div class="research-grid">{research}</div><div class="keyword-strip">{keywords}</div></div></section>
       <section class="section selected-section container" id="selected-work" aria-labelledby="work-title"><div class="section-heading"><div><span class="eyebrow section-index">02 / SELECTED WORK</span><h2 id="work-title">Ideas into <em>research.</em></h2></div><a class="text-link" href="publications.html">All publications {icon('arrow')}</a></div><div class="works-grid">{''.join(works)}</div><a class="archive-note" href="publications.html#manuscript"><span class="archive-dot"></span><span>Also exploring global-local contrastive learning, cross-modal alignment, and wearable physiomarkers.</span>{icon('arrow')}</a></section>
       <section class="section news-section" aria-labelledby="news-title"><div class="container split-section"><div class="section-intro"><span class="eyebrow section-index">03 / LATEST</span><h2 id="news-title">Along<br><em>the way.</em></h2><p>Research updates &amp; milestones.</p></div><div class="news-list-wrap"><ol class="news-list">{news}</ol><details class="older-news"><summary>Earlier updates {icon('down')}</summary><ol class="news-list">{older}</ol></details></div></div></section>
@@ -255,7 +258,7 @@ def main() -> None:
     except (OSError, json.JSONDecodeError, ValueError, KeyError, TypeError) as exc:
         raise SystemExit(f'Cannot build website: {exc}') from exc
     p = data['profile']
-    (ROOT/'index.html').write_text(page(f"{p['name']} — AI Researcher",home(data),data),encoding='utf-8')
+    (ROOT/'index.html').write_text(page(f"Latent — {p['name']}",home(data),data),encoding='utf-8')
     (ROOT/'publications.html').write_text(page(f"Publications — {p['name']}",publications(data),data,active='publications',canonical_path='publications.html',full_footer=False),encoding='utf-8')
     project_dir=ROOT/'projects'
     project_dir.mkdir(exist_ok=True)
