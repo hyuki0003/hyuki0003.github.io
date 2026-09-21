@@ -106,6 +106,13 @@
   let automatic = false, finishFlight = null;
   let orbitTime = 0, docked = -1, hoveredConsole = false, shipDepth = 3, shipHeading = 0;
   let orbitLayout = null, consoleSize = { width: 260, height: 210 }, atLaunchPad = true;
+  let hasLaunched = false, celebrationTimer = 0;
+  const landingGame = hero && window.createLandingGame?.(hero, () => {
+    clearTimeout(celebrationTimer);
+    hero.classList.add('landing-celebration');
+    celebrationTimer = window.setTimeout(() => hero.classList.remove('landing-celebration'), 2800);
+    announcement.textContent = 'Perfect touchdown. Welcome home, Dong-Hyuk.';
+  });
   const phases = worlds.map((_, index) => Math.PI * 1.15 + index * Math.PI * 2 / worlds.length);
   const descriptions = {
     introduction: ['Introduction', 'Meet the researcher exploring connections across signals.', 'Meet Dong-Hyuk Lee'],
@@ -124,13 +131,16 @@
     updateOrbit(0); drawOrbitTrack();
     if (finishFlight) finishFlight();
   }
+  function launchPosition() {
+    const pad=launchPad.getBoundingClientRect(), field=system.getBoundingClientRect();
+    // Match the parked ship size, independently of its current flight rotation.
+    const shipHeight=Math.max(25,Math.min(window.innerWidth*.0272,34));
+    return {x:(pad.left+pad.width/2-field.left)/field.width*1000,
+      y:(pad.top+1-shipHeight*(56/72-.5)-field.top)/field.height*700};
+  }
   function positionOnLaunchPad() {
     if (!launchPad || !orbitLayout) return;
-    const pad=launchPad.getBoundingClientRect(), field=system.getBoundingClientRect();
-    const shipHeight=voyager.querySelector('.voyager-ship').getBoundingClientRect().height;
-    shipDepth=3;
-    place({x:(pad.left+pad.width/2-field.left)/field.width*1000,
-      y:(pad.top+1-shipHeight*(56/72-.5)-field.top)/field.height*700});
+    shipDepth=3; place(launchPosition());
   }
   function planetPosition(index, advance = 0) {
     const point = planetRenderer?.project(phases[index] + orbitTime + advance);
@@ -261,7 +271,10 @@
     };
   }
   function travel(target, dockIndex = -1, keyboard = false) {
-    const fromDepth=shipDepth;
+    const fromDepth=shipDepth, returning=dockIndex===-2;
+    hasLaunched=true; hero.classList.add('has-launched');
+    if (launchPad && landingGame) launchPad.disabled=false;
+    landingGame?.close();
     atLaunchPad=false;
     docked = -1; hideConsole();
     voyager.dataset.state='flying';
@@ -271,7 +284,7 @@
       (scene.cy-point.y/700*orbitLayout.height)/scene.scale,depth];
     const toScreen=point=>({x:(scene.cx+point[0]*scene.scale)/orbitLayout.width*1000,
       y:(scene.cy-point[1]*scene.scale)/orbitLayout.height*700});
-    const destination=()=>toSpace(dockIndex>=0?dockingPosition(dockIndex):target,dockIndex>=0?planetPosition(dockIndex).z:3);
+    const destination=()=>toSpace(dockIndex>=0?dockingPosition(dockIndex):returning?launchPosition():target,dockIndex>=0?planetPosition(dockIndex).z:3);
     const clearance=1+Math.hypot(orbitLayout.shipWidth,orbitLayout.shipHeight)*1.08/2/scene.scale+.08;
     const projectedArrival=dockIndex>=0?toSpace(dockingPosition(dockIndex,.105),planetPosition(dockIndex,.105).z):destination();
     const route=createFlightPath(toSpace(position,fromDepth),destination(),clearance,projectedArrival);
@@ -291,8 +304,10 @@
     function finish() {
       cancelAnimationFrame(flightId); flightId=0;
       shipDepth=dockIndex>=0?planetPosition(dockIndex).z:3;
-      place(dockIndex>=0 ? dockingPosition(dockIndex) : target); docked = dockIndex;
-      voyager.dataset.state=dockIndex>=0?'landed':'idle';
+      atLaunchPad=returning;
+      place(dockIndex>=0 ? dockingPosition(dockIndex) : returning?launchPosition():target); docked = dockIndex>=0?dockIndex:-1;
+      voyager.dataset.state=returning?'parked':dockIndex>=0?'landed':'idle';
+      if (returning) { shipHeading=0; voyager.style.setProperty('--heading','0deg'); positionOnLaunchPad(); }
       if (dockIndex>=0 && (paused||reduced.matches)) { shipHeading=-12; voyager.style.setProperty('--heading','-12deg'); }
       const memory = document.createElementNS('http://www.w3.org/2000/svg', 'path');
       memory.setAttribute('d', path); memories.append(memory);
@@ -303,6 +318,12 @@
         hero.querySelector('.space-destination').textContent=`DH–01 / LANDED ON ${name.toUpperCase()}`;
         hero.querySelector('.space-description').textContent='Surface link established. Continue from the ship’s message.';
         openConsole(dockIndex,keyboard);
+      } else if (returning) {
+        hero.querySelector('.space-destination').textContent='DH–01 / HOME BASE';
+        hero.querySelector('.space-description').textContent='Welcome back. A little challenge awaits at the launch pad.';
+        announcement.textContent='Returned to the launch pad. Manual landing challenge unlocked.';
+        launchPad.focus({preventScroll:true});
+        landingGame?.open();
       }
     }
     finishFlight = finish;
@@ -318,8 +339,8 @@
       const dx=ahead[0]-behind[0], dy=behind[1]-ahead[1];
       const heading=Math.atan2(dx,-dy)*180/Math.PI;
       const settle=Math.max(0,(progress-.8)/.2), landingBlend=settle*settle*(3-2*settle);
-      const landingTurn=((-12-heading)%360+540)%360-180;
-      orientShip(heading+(dockIndex>=0?landingTurn*landingBlend:0),Math.min(50,now-lastFlightFrame));
+      const landingTurn=(((returning?0:-12)-heading)%360+540)%360-180;
+      orientShip(heading+(dockIndex>=0||returning?landingTurn*landingBlend:0),Math.min(50,now-lastFlightFrame));
       lastFlightFrame=now;
       drawFlight(t,end);
       if (progress<1) flightId=requestAnimationFrame(fly); else finish();
@@ -356,6 +377,16 @@
         worlds[next].focus();
       }
     });
+  });
+  launchPad?.addEventListener('click',event=>{
+    if (!hasLaunched || !landingGame) return;
+    event.stopPropagation(); stopJourney(); hideConsole(); selected=-1;
+    worlds.forEach(world=>world.setAttribute('aria-pressed','false'));
+    if (atLaunchPad) { landingGame.open(); return; }
+    hero.querySelector('.space-destination').textContent='DH–01 / RETURNING HOME';
+    hero.querySelector('.space-description').textContent='Returning to the point where it all began.';
+    hero.querySelector('.space-related').hidden=true;
+    travel(launchPosition(),-2,event.detail===0);
   });
   function dismissConsole() {
     const returnIndex=docked;

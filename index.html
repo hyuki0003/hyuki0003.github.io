@@ -20,9 +20,10 @@
   <script type="application/ld+json">{"@context": "https://schema.org", "@type": "Person", "name": "Dong-Hyuk Lee", "url": "https://hyuki0003.github.io", "jobTitle": "AI Researcher", "sameAs": ["https://github.com/hyuki0003", "https://www.linkedin.com/in/dong-hyuk-lee-8542971b0/", "https://www.notion.so/81ff1f23dd8441ba82bb77d9165426b7?source=copy_link", "https://www.instagram.com/hyuk_i2/"]}</script>
   <script src="assets/citations.js" defer></script>
   <script src="assets/site.js" defer></script>
-<link rel="stylesheet" href="assets/universe.css?v=70efcbf5f1">
+<link rel="stylesheet" href="assets/universe.css?v=53e785fd5f">
 <script src="assets/planet.js?v=169040caec" defer></script>
-<script src="assets/universe.js?v=536cf860ef" defer></script>
+<script src="assets/lander.js?v=71469654f3" defer></script>
+<script src="assets/universe.js?v=291f8d27ce" defer></script>
 <script>document.documentElement.dataset.theme="dark"</script>
 <link rel="preload" as="image" href="assets/space/latent-atmosphere.webp">
 </head>
@@ -44,7 +45,7 @@
   <div class="space-coordinates">HYUKI0003.GITHUB.IO &nbsp; / &nbsp; PERSONAL RESEARCH UNIVERSE</div>
   <div class="space-intro">
     <p class="space-eyebrow"><span></span> AI RESEARCHER · REPRESENTATION LEARNING</p>
-    <h1 id="universe-title" aria-label="Dong-Hyuk Lee.">Dong-Hyuk Lee<span class="launch-pad" aria-hidden="true"><span class="sr-only">.</span></span></h1>
+    <h1 id="universe-title" aria-label="Dong-Hyuk Lee.">Dong-Hyuk Lee<button class="launch-pad" type="button" aria-label="Return to launch pad" aria-controls="landing-game" disabled><span class="sr-only">.</span></button></h1>
     <p class="space-tagline">Across signals.<br><em>Beyond boundaries.</em></p>
     <p class="space-manifesto">Different modalities. A shared universe.<br>I explore the connections in between.</p>
     <a class="space-enter" href="research.html">Discover my research <span aria-hidden="true">↘</span></a>
@@ -81,6 +82,22 @@
     <div class="space-detail" id="space-detail"><p class="space-destination">DH–01 / READY TO LAUNCH</p><p class="space-description">Every journey starts with a point.<br>Choose a world to begin.</p><a class="space-related" href="research.html#selected-work">View selected work <span aria-hidden="true">↗</span></a><span class="sr-only space-announcement" role="status" aria-live="polite"></span></div>
     <div class="space-guide"><p id="space-help">Click space to fly. Select a world to land.</p><button class="space-cruise" type="button" aria-pressed="false" hidden>Start journey <span aria-hidden="true">↗</span></button><a href="#mission" class="space-scroll">THE MISSION <span aria-hidden="true">↓</span></a></div>
   </div>
+  <dialog class="lander-console" id="landing-game" aria-labelledby="lander-title" aria-describedby="lander-help">
+    <div class="lander-topline"><span><i></i> DH–01 / HIDDEN TRANSMISSION</span><button class="lander-close" type="button" aria-label="Close landing game">×</button></div>
+    <div class="lander-heading"><div><span class="lander-eyebrow">WELCOME BACK, EXPLORER</span><h2 id="lander-title">One last landing.</h2></div><span class="lander-badge">MANUAL<br>CONTROL</span></div>
+    <div class="lander-readouts" aria-label="Flight telemetry" aria-live="off">
+      <div><span>ALTITUDE</span><output data-readout="altitude">15.8 m</output></div>
+      <div><span>DESCENT</span><output data-readout="speed">0.7 m/s</output></div>
+      <div><span>TILT</span><output data-readout="tilt">0°</output></div>
+      <div><span>THRUST</span><output data-readout="thrust">40%</output></div>
+    </div>
+    <div class="lander-view"><canvas width="800" height="480" aria-label="Landing field with a spacecraft above the home pad"></canvas><div class="lander-overlay"><span>BRING IT HOME</span><p>Center. Level. Gently.</p></div></div>
+    <div class="lander-throttle" aria-hidden="true"><span>ENGINE</span><i><b></b><em></em></i><span>100%</span></div>
+    <p class="lander-status" role="status" aria-live="polite">Touch down centered, with tilt ≤ 8° and descent ≤ 1.8 m/s.</p>
+    <div class="lander-controls" aria-label="Flight controls"><button type="button" data-control="left" aria-label="Tilt left">←</button><button type="button" data-control="right" aria-label="Tilt right">→</button><span></span><button type="button" data-control="down" aria-label="Decrease thrust">↓</button><button type="button" data-control="up" aria-label="Increase thrust">↑</button></div>
+    <p id="lander-help" class="lander-help">← → tilt &nbsp; · &nbsp; ↑ ↓ thrust &nbsp; · &nbsp; Space to start</p>
+    <div class="lander-actions"><button class="lander-start" type="button">Begin descent <span aria-hidden="true">↘</span></button><button class="lander-pause" type="button" hidden>Pause</button></div>
+  </dialog>
 </section>
 <section id="mission" class="space-mission container" aria-label="Research mission"><div><span class="eyebrow">THE MISSION</span><h2>Learning representations.<br><em>Understanding signals.</em></h2></div><p>I explore contrastive learning and multimodal foundation models, seeking shared representations that transfer across modalities, tasks, and domains.</p><div class="mission-facts"><div><span>CURRENTLY</span><strong>Medical AI Co., Ltd.</strong></div><div><span>PREVIOUSLY</span><strong>NeuroAI Lab. · Kwangwoon Univ.</strong></div><div><span>RESEARCH INTERESTS</span><strong>Contrastive · Multimodal · Foundation Models</strong></div></div></section>
 </main>

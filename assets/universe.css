@@ -40,7 +40,7 @@ main, .contact-section, .site-footer { position:relative; z-index:1; }
 .space-eyebrow > span { width:5px; height:5px; background:#bbe5d1; border-radius:50%; box-shadow:0 0 12px #bbe5d199; }
 .space-intro h1 { white-space:nowrap; font-size:clamp(64px,6.4vw,106px); line-height:.98; font-weight:300; letter-spacing:-.035em; margin-left:-4px; color:#ecf3f1; text-shadow:0 3px 40px #010b11; }
 .space-intro h1 span { color:#93c6bd; }
-.launch-pad { display:inline-block; position:relative; width:.28em; height:.12em; margin-left:.12em; vertical-align:baseline; border:1px solid #c9e8deaa; border-radius:50%; background:linear-gradient(150deg,#d1e9dd,#769f9a); box-shadow:0 3px 0 #314d55,0 5px 7px #0008,0 0 14px #91cfbc2b; }
+.launch-pad { appearance:none; padding:0; font:inherit; color:inherit; pointer-events:auto; cursor:pointer; opacity:1; display:inline-block; position:relative; width:.28em; height:.12em; margin-left:.12em; vertical-align:baseline; border:1px solid #c9e8deaa; border-radius:50%; background:linear-gradient(150deg,#d1e9dd,#769f9a); box-shadow:0 3px 0 #314d55,0 5px 7px #0008,0 0 14px #91cfbc2b; }
 .launch-pad::after { content:''; position:absolute; inset:2px; border:1px solid #365c6366; border-radius:50%; }
 .space-tagline { font-size:clamp(23px,2.5vw,39px); line-height:1.24; font-weight:300; letter-spacing:-.8px; margin-top:26px; }
 .space-tagline em { color:#a9c3c9; font-style:normal; }
@@ -235,3 +235,56 @@ h2 em { font-family:var(--sans); font-style:normal; font-weight:300; color:#9fb9
 .space-world.is-behind .world-caption { color:#b4c9d1; }
 .world-globe[data-occlusion="hidden"] + .world-caption::after { content:'FAR SIDE';font:5px var(--mono);letter-spacing:1px;color:#88a4b2; }
 .space-world:focus-visible { outline-offset:8px; }
+
+/* The launch point quietly becomes a return destination after the first flight. */
+.launch-pad:disabled { cursor:default; }
+.launch-pad:not(:disabled)::before { content:''; position:absolute; inset:-15px -9px; border-radius:50%; }
+.launch-pad:not(:disabled):hover { box-shadow:0 3px 0 #314d55,0 0 21px #bceedd99; }
+.launch-pad:focus-visible { outline:2px solid #c2efdf; outline-offset:8px; }
+.has-launched .space-voyager[data-state="parked"] { animation:none; }
+
+/* A compact ship console; the research universe keeps orbiting behind it. */
+.lander-console { position:fixed; inset:auto 34px 28px auto; margin:0; width:380px; max-width:calc(100vw - 24px); max-height:calc(100svh - 28px); padding:18px; overflow:auto; border:1px solid #92cfc470; border-radius:12px; color:#e4eeed; background:linear-gradient(145deg,#142a35fa,#07121dfc 70%); box-shadow:0 24px 90px #000a,0 0 42px #8bc8b514,inset 0 1px #e7fff018; font-family:var(--sans); }
+.lander-console::backdrop { background:#02091122; backdrop-filter:none; }
+.lander-console[open] { animation:lander-arrival .3s ease-out; }
+.lander-console [hidden] { display:none !important; }
+.lander-topline { display:flex; justify-content:space-between; align-items:center; color:#a9d6cb; font:7px var(--mono); letter-spacing:1.1px; }
+.lander-topline > span { display:flex; align-items:center; gap:8px; }
+.lander-topline i { width:4px; height:4px; border-radius:50%; background:#b8ecd4; box-shadow:0 0 9px #a6e6d1; }
+.lander-close { display:grid; place-items:center; min-width:32px; min-height:32px; margin:-9px -9px -9px 0; padding:0; background:none; border:0; color:#a5bec3; font:22px var(--sans); }
+.lander-close:hover { color:#fff; }
+.lander-heading { display:flex; justify-content:space-between; align-items:center; gap:12px; margin:14px 0 11px; }
+.lander-eyebrow { display:block; font:6px var(--mono); letter-spacing:1.4px; color:#819eaa; }
+.lander-heading h2 { font:300 25px/1.2 var(--sans); letter-spacing:-.7px; margin:6px 0 0; }
+.lander-badge { font:6px/1.8 var(--mono); letter-spacing:1px; text-align:right; color:#9bb7bc; border-right:2px solid #a7d8c766; padding-right:9px; }
+.lander-readouts { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; padding:10px 0 11px; border-top:1px solid #63889533; }
+.lander-readouts div { display:flex; flex-direction:column; gap:7px; }
+.lander-readouts span { color:#809ea9; font:6px var(--mono); letter-spacing:1px; }
+.lander-readouts output { font:12px var(--mono); color:#c8e7e0; font-variant-numeric:tabular-nums; }
+.lander-readouts output[data-warning="true"] { color:#e4b19c; }
+.lander-view { position:relative; overflow:hidden; border:1px solid #8cbab93d; border-radius:5px; background:#06111c; }
+.lander-view canvas { display:block; width:100%; height:auto; aspect-ratio:5/3; }
+.lander-overlay { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:9px; background:linear-gradient(transparent,#07131c88,transparent); pointer-events:none; }
+.lander-overlay > span { font:9px var(--mono); letter-spacing:2px; color:#dbf2e7; text-shadow:0 2px 12px #000; }
+.lander-overlay p { font:10px var(--sans); color:#adc6c9; }
+.lander-console[data-state="landed"] .lander-view { border-color:#b0e7cbbb; box-shadow:0 0 20px #94d7ba12; }
+.lander-console[data-state="crashed"] .lander-overlay > span { color:#e6b19e; }
+.lander-throttle { display:flex; align-items:center; gap:9px; color:#77939e; font:5px var(--mono); letter-spacing:.8px; margin-top:9px; }
+.lander-throttle > i { position:relative; display:block; height:3px; flex:1; background:#63828f33; }
+.lander-throttle b { position:absolute; inset:0 auto 0 0; width:40%; background:#a7d6c7; }
+.lander-throttle em { position:absolute; left:50%; top:-2px; height:7px; border-left:1px solid #cee4d466; }
+.lander-status { min-height:31px; color:#a8bfc7; font:10px/1.65 var(--sans); margin:15px 0 10px; }
+.lander-controls { display:grid; grid-template-columns:repeat(2,44px) 1fr repeat(2,44px); gap:8px; }
+.lander-controls button { min-width:44px; min-height:40px; padding:0; border:1px solid #89b6b344; border-radius:5px; background:#a0c9c10a; color:#c8e5df; font:17px var(--sans); touch-action:none; user-select:none; }
+.lander-controls button:hover,.lander-controls button.is-held { background:#a7d8ce24; border-color:#a7d8ce99; }
+.lander-controls button:disabled { opacity:.4; cursor:default; }
+.lander-help { font:7px/1.6 var(--mono); color:#7f9ba5; text-align:center; margin:9px 0 13px; }
+.lander-actions { display:flex; gap:10px; }
+.lander-actions button { width:100%; min-height:39px; border:1px solid #96c8bc66; border-radius:4px; padding:10px 15px; background:#9fcebd16; color:#d6eee6; font:10px var(--sans); }
+.lander-actions button:hover { background:#acdaca2a; border-color:#b8e2d5; }
+.lander-console button:focus-visible { outline:2px solid #c3ecdd; outline-offset:3px; }
+.landing-celebration #universe-title,.landing-celebration .space-tagline,.landing-celebration .space-manifesto,.landing-celebration .space-enter { animation:home-signal .9s ease-in-out 3; }
+@keyframes home-signal { 0%,100% { opacity:1; text-shadow:0 0 1px #b0efcd00; } 40% { opacity:.25; text-shadow:0 0 18px #b0efcd77; } 65% { opacity:1; text-shadow:0 0 24px #b0efcdaa; } }
+@keyframes lander-arrival { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
+@media (max-width:620px) { .lander-console { inset:auto 12px 12px; width:auto; padding:17px; max-height:calc(100svh - 24px); }.lander-heading { margin-top:17px; }.lander-heading h2 { font-size:25px; }.lander-controls button { min-height:44px; } }
+@media (prefers-reduced-motion:reduce) { .landing-celebration #universe-title,.landing-celebration .space-tagline,.landing-celebration .space-manifesto,.landing-celebration .space-enter { text-shadow:0 0 18px #b0efcdaa; } }
