@@ -7,6 +7,7 @@ Run `python3 build.py` after updating the content file or templates.
 from __future__ import annotations
 
 import html
+import hashlib
 import json
 import re
 from pathlib import Path
@@ -162,7 +163,11 @@ def page(title: str, body: str, data: dict, prefix: str = '', active: str = '', 
     template = template.replace('<meta name="theme-color" content="#f6f5f1">', '<meta name="theme-color" content="#050b10">')
     if not canonical_path:
         template = template.replace('<script src="assets/universe.js"', '<script src="assets/planet.js" defer></script>\n<script src="assets/universe.js"')
-        template = template.replace('</head>', '<link rel="preload" as="image" href="assets/space/latent-universe.webp">\n</head>')
+        template = template.replace('</head>', '<link rel="preload" as="image" href="assets/space/latent-atmosphere.webp">\n</head>')
+    # Keep HTML, controls, and shaders in sync for returning visitors.
+    for asset in ("assets/universe.css", "assets/universe.js", "assets/planet.js"):
+        digest = hashlib.sha256((ROOT / asset).read_bytes()).hexdigest()[:10]
+        template = template.replace(asset + '"', asset + "?v=" + digest + '"')
     return template
 
 

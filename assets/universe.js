@@ -53,8 +53,8 @@
       camera.y += (pointer.y - camera.y) * .06;
       if (hero && heroVisible) {
         sceneTime += delta / 1000;
-        updateOrbit(delta);
         planetRenderer?.draw(sceneTime);
+        updateOrbit(delta);
         hero.style.setProperty('--camera-x', `${camera.x}px`);
         hero.style.setProperty('--camera-y', `${camera.y}px`);
       }
@@ -90,132 +90,193 @@
   const memories = system?.querySelector('.space-memories');
   const cruise = hero?.querySelector('.space-cruise');
   const announcement = hero?.querySelector('.space-announcement');
-  let position = { x: 730, y: 343 };
+  const consolePanel = hero?.querySelector('.ship-console');
+  const consoleLink = hero?.querySelector('.console-link');
+  const consoleClose = hero?.querySelector('.console-close');
+  let position = { x: 620, y: 620 };
   let flightId = 0, timer = 0, selected = -1;
-  let automatic = false;
-  let finishFlight = null;
-  let orbitTime = 0, docked = -1, hoveredWorld = false;
-  let orbitLayout = null;
-  const phases = [Math.PI * 1.5, 0, Math.PI * .5, Math.PI];
+  let automatic = false, finishFlight = null;
+  let orbitTime = 0, docked = -1, hoveredWorld = false, hoveredConsole = false;
+  let orbitLayout = null, consoleSize = { width: 260, height: 210 }, positioned = false;
+  const phases = [Math.PI * 1.22, Math.PI * 1.72, Math.PI * .22, Math.PI * .72];
+  const descriptions = {
+    ecg: ['ECG', 'Heart signals, diagnosis, and ECG foundation models.', 'Explore ECG research'],
+    vision: ['Vision', 'Finding physiological signals in facial video.', 'Explore vision research'],
+    emotion: ['Emotion Recognition', 'Connecting language, speech, and visual cues to understand emotion.', 'Explore emotion recognition'],
+    wearables: ['Wearables', 'Multimodal physiological markers from wearable biosignals.', 'Explore wearable research']
+  };
   function measureOrbit() {
     if (!system) return;
     const rect = system.getBoundingClientRect();
-    const compact = window.innerWidth <= 800;
-    orbitLayout = { cx: compact ? 500 : 760, cy: 350, rx: compact ? 310 : 160, ry: compact ? 224 : 203,
-      offsets: worlds.map(world => {
-        const bounds = world.getBoundingClientRect(), globe = world.querySelector('.world-globe').getBoundingClientRect();
-        return { x: (globe.left + globe.width / 2 - bounds.left - bounds.width / 2) / rect.width * 1000,
-          y: (globe.top + globe.height / 2 - bounds.top - bounds.height / 2) / rect.height * 700 };
-      }) };
-    const ellipse = system.querySelector('.space-routes > ellipse');
-    for (const key of ['cx', 'cy', 'rx', 'ry']) ellipse.setAttribute(key, orbitLayout[key]);
-    ellipse.removeAttribute('transform');
+    orbitLayout = { width: rect.width, height: rect.height,
+      radius: worlds.map(world => world.querySelector('.world-globe').getBoundingClientRect().width / 2) };
+    if (!positioned) {
+      place({ x: window.innerWidth <= 800 ? 180 : 545, y: 690 * .76 }); positioned = true;
+    }
+    if (consolePanel && !consolePanel.hidden) measureConsole();
     updateOrbit(0);
+    if (finishFlight) finishFlight();
   }
   function planetPosition(index) {
+    const point = planetRenderer?.project(phases[index] + orbitTime);
+    if (point) return { ...point, x: point.x / orbitLayout.width * 1000, y: point.y / orbitLayout.height * 700 };
     const angle = phases[index] + orbitTime;
-    return { x: orbitLayout.cx + Math.cos(angle) * orbitLayout.rx, y: orbitLayout.cy + Math.sin(angle) * orbitLayout.ry };
+    return { x: 700 + Math.cos(angle) * 225, y: 350 + Math.sin(angle) * 140, z: 0, scale: 1, occluded: false };
   }
   function dockingPosition(index) {
-    const point = planetPosition(index), offset = orbitLayout.offsets[index];
-    return { x: Math.max(40, Math.min(940, point.x + offset.x - 25)), y: Math.max(30, point.y + offset.y - 65) };
+    const point = planetPosition(index), radius = orbitLayout.radius[index];
+    return { x: point.x - radius * .10 / orbitLayout.width * 1000,
+      y: point.y - radius * .82 / orbitLayout.height * 700 };
   }
   function updateOrbit(delta) {
     if (!orbitLayout) return;
-    // Hold moving targets while a pointer or keyboard user is selecting one.
-    const focusedWorld = document.activeElement?.closest('.space-world');
-    if (!hoveredWorld && !focusedWorld && !finishFlight) orbitTime += delta * .00004;
+    const focusedControl = document.activeElement?.closest('.space-world, .ship-console');
+    if (!hoveredWorld && !hoveredConsole && !focusedControl && !finishFlight && docked < 0) orbitTime += delta * .000055;
     worlds.forEach((world, index) => {
-      const point = planetPosition(index);
+      const point = planetPosition(index), x = point.x / 1000 * orbitLayout.width;
       world.style.left = `${point.x / 10}%`; world.style.top = `${point.y / 7}%`;
+      world.style.setProperty('--caption-x', `${Math.max(62, Math.min(orbitLayout.width-62,x))-x}px`);
+      world.querySelector('.world-globe').style.transform = `scale(${point.scale})`;
+      world.classList.toggle('is-occluded', point.occluded && index !== docked);
+      world.style.zIndex = point.z > 0 ? '4' : '2';
     });
-    system.querySelector('.space-routes > ellipse').style.strokeDashoffset = String(-sceneTime * 3);
-    if (docked >= 0 && !finishFlight) place(dockingPosition(docked));
+    const route = system.querySelector('.space-orbit-track');
+    if (planetRenderer && route) {
+      let path = '', pen = false;
+      for (let i=0; i<=96; i++) {
+        const point = planetRenderer.project(i/96*Math.PI*2);
+        if (point.occluded) { pen=false; continue; }
+        path += `${pen?'L':'M'}${(point.x/orbitLayout.width*1000).toFixed(2)} ${(point.y/orbitLayout.height*700).toFixed(2)} `;
+        pen=true;
+      }
+      route.setAttribute('d',path);
+    }
+    if (docked >= 0 && !finishFlight) { place(dockingPosition(docked)); positionConsole(); }
   }
-  const descriptions = {
-    ecg: ['ECG / BIOSIGNALS', 'Learning representations of the heart, from diagnosis to ECG foundation models.', 'Explore ECG research'],
-    vision: ['VISION / PERCEPTION', 'Finding physiological signals in facial video through contrastive learning.', 'Explore remote heart rate estimation'],
-    emotion: ['EMOTION RECOGNITION / TEXT + AUDIO', 'Connecting language, speech, and visual cues to understand emotion in conversations.', 'Explore multimodal emotion recognition'],
-    wearables: ['WEARABLES / PHYSIOLOGY', 'Exploring multimodal physiological markers from wearable biosignals.', 'Explore wearable physiomarkers']
-  };
   function place(point) {
     position = point;
     voyager.style.left = `${point.x / 10}%`; voyager.style.top = `${point.y / 7}%`;
   }
-  function travel(target, dockIndex = -1) {
-    docked = -1;
+  function measureConsole() {
+    consoleSize = { width: consolePanel.offsetWidth, height: consolePanel.offsetHeight };
+  }
+  function positionConsole() {
+    if (!consolePanel || consolePanel.hidden) return;
+    const x=position.x/1000*orbitLayout.width, y=position.y/700*orbitLayout.height;
+    const left=Math.max(12,Math.min(orbitLayout.width-consoleSize.width-12,x-consoleSize.width/2));
+    let top=y+46;
+    if (top+consoleSize.height>orbitLayout.height-8) top=y-consoleSize.height-45;
+    consolePanel.style.left=`${left}px`; consolePanel.style.top=`${Math.max(8,top)}px`;
+  }
+  function hideConsole() { hoveredConsole=false; if (consolePanel) consolePanel.hidden=true; }
+  function openConsole(index, keyboard) {
+    const [title,text,label]=descriptions[worlds[index].dataset.world];
+    hero.querySelector('.console-title').textContent=title;
+    hero.querySelector('.console-description').textContent=text;
+    consoleLink.href=worlds[index].href;
+    consoleLink.innerHTML=''; consoleLink.append(document.createTextNode(label+' '));
+    const arrow=document.createElement('span');arrow.setAttribute('aria-hidden','true');arrow.textContent='↗';consoleLink.append(arrow);
+    consolePanel.hidden=false; measureConsole(); positionConsole();
+    announcement.textContent=`Landed on ${title}. ${label} is available in the landing message.`;
+    if (keyboard) consoleLink.focus({preventScroll:true});
+  }
+  function travel(target, dockIndex = -1, keyboard = false) {
+    docked = -1; hideConsole();
+    voyager.dataset.state='flying';
     cancelAnimationFrame(flightId); finishFlight = null;
     const from = { ...position };
-    const control = { x: (from.x + target.x) / 2 + (target.y - from.y) * .24,
-      y: (from.y + target.y) / 2 - (target.x - from.x) * .24 };
+    const control = { x: (from.x + target.x) / 2 + (target.y - from.y) * .22,
+      y: Math.min(from.y,target.y) - Math.abs(target.x-from.x)*.12 - 35 };
     const path = `M${from.x} ${from.y} Q${control.x} ${control.y} ${target.x} ${target.y}`;
     trail.setAttribute('d', path);
     const length = trail.getTotalLength();
     trail.style.strokeDasharray = String(length); trail.style.strokeDashoffset = String(length);
     function finish() {
-      cancelAnimationFrame(flightId); place(target); docked = dockIndex;
+      cancelAnimationFrame(flightId); flightId=0;
+      place(dockIndex>=0 ? dockingPosition(dockIndex) : target); docked = dockIndex;
+      voyager.dataset.state=dockIndex>=0?'landed':'idle';
+      if (dockIndex>=0) voyager.style.setProperty('--heading','-12deg');
       const memory = document.createElementNS('http://www.w3.org/2000/svg', 'path');
       memory.setAttribute('d', path); memories.append(memory);
-      while (memories.children.length > 3) memories.firstElementChild.remove();
+      while (memories.children.length > 2) memories.firstElementChild.remove();
       trail.setAttribute('d', ''); finishFlight = null;
+      if (dockIndex>=0) {
+        const name=descriptions[worlds[dockIndex].dataset.world][0];
+        hero.querySelector('.space-destination').textContent=`DH–01 / LANDED ON ${name.toUpperCase()}`;
+        hero.querySelector('.space-description').textContent='Surface link established. Continue from the ship’s message.';
+        openConsole(dockIndex,keyboard);
+      }
     }
     finishFlight = finish;
     if (paused || reduced.matches || !visible || !heroVisible) { finish(); return; }
     const start = performance.now();
     function fly(now) {
-      const progress = Math.min((now - start) / 1600, 1);
+      const progress = Math.min((now - start) / 1900, 1);
       const t = progress < .5 ? 4 * progress ** 3 : 1 - (-2 * progress + 2) ** 3 / 2;
-      place({ x: (1 - t) ** 2 * from.x + 2 * (1 - t) * t * control.x + t ** 2 * target.x,
-        y: (1 - t) ** 2 * from.y + 2 * (1 - t) * t * control.y + t ** 2 * target.y });
-      trail.style.strokeDashoffset = String(length * (1 - t));
-      if (progress < 1) flightId = requestAnimationFrame(fly); else finish();
+      place({ x: (1-t)**2*from.x+2*(1-t)*t*control.x+t*t*target.x,
+        y: (1-t)**2*from.y+2*(1-t)*t*control.y+t*t*target.y });
+      const dx=2*((1-t)*(control.x-from.x)+t*(target.x-control.x))*orbitLayout.width/1000;
+      const dy=2*((1-t)*(control.y-from.y)+t*(target.y-control.y))*orbitLayout.height/700;
+      const heading=Math.atan2(dx,-dy)*180/Math.PI;
+      voyager.style.setProperty('--heading',`${heading}deg`);
+      trail.style.strokeDashoffset=String(length*(1-t));
+      if (progress<1) flightId=requestAnimationFrame(fly); else finish();
     }
-    flightId = requestAnimationFrame(fly);
+    flightId=requestAnimationFrame(fly);
   }
   function stopJourney() {
     automatic = false; clearTimeout(timer);
     if (cruise) { cruise.setAttribute('aria-pressed', 'false'); cruise.textContent = 'Start journey ↗'; }
   }
-  function showWorld(index, manual = true) {
+  function showWorld(index, manual = true, keyboard = false) {
     if (manual) stopJourney();
-    selected = index;
-    const world = worlds[index];
-    const [title, text, label] = descriptions[world.dataset.world];
-    worlds.forEach((item, i) => item.setAttribute('aria-pressed', String(index === i)));
-    hero.querySelector('.space-destination').textContent = title;
-    hero.querySelector('.space-description').textContent = text;
-    const link = hero.querySelector('.space-related'); link.href = world.href; link.textContent = `${label} ↗`;
-    if (manual) announcement.textContent = `${title}. ${text}`;
-    travel(dockingPosition(index), index);
+    selected=index;
+    const world=worlds[index], [title]=descriptions[world.dataset.world];
+    worlds.forEach((item,i)=>item.setAttribute('aria-pressed',String(index===i)));
+    hero.querySelector('.space-destination').textContent=`DH–01 / APPROACHING ${title.toUpperCase()}`;
+    hero.querySelector('.space-description').textContent='Approach vector confirmed. Preparing for touchdown.';
+    hero.querySelector('.space-related').hidden=true;
+    if(manual)announcement.textContent=`Flying to ${title}.`;
+    travel(dockingPosition(index),index,keyboard);
   }
-  worlds.forEach((world, index) => {
-    world.addEventListener('pointerenter', () => { hoveredWorld = true; });
-    world.addEventListener('pointerleave', () => { hoveredWorld = false; });
-    world.setAttribute('role', 'button'); world.setAttribute('aria-pressed', 'false');
-    world.addEventListener('click', event => {
-      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-      event.preventDefault(); showWorld(index);
+  worlds.forEach((world,index)=>{
+    world.addEventListener('pointerenter',()=>{hoveredWorld=true;});
+    world.addEventListener('pointerleave',()=>{hoveredWorld=false;});
+    world.setAttribute('role','button');world.setAttribute('aria-pressed','false');
+    world.addEventListener('click',event=>{
+      if(event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
+      event.preventDefault();showWorld(index,true,event.detail===0);
     });
-    world.addEventListener('keydown', event => {
-      if (event.key === ' ') { event.preventDefault(); showWorld(index); }
-      if (['ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
+    world.addEventListener('keydown',event=>{
+      if(event.key===' '){event.preventDefault();showWorld(index,true,true);}
+      if(['ArrowRight','ArrowDown','ArrowLeft','ArrowUp','Home','End'].includes(event.key)){
         event.preventDefault();
-        const indexTo = event.key === 'Home' ? 0 : event.key === 'End' ? worlds.length - 1 :
-          (index + (['ArrowRight', 'ArrowDown'].includes(event.key) ? 1 : -1) + worlds.length) % worlds.length;
-        worlds[indexTo].focus(); showWorld(indexTo);
+        const next=event.key==='Home'?0:event.key==='End'?worlds.length-1:(index+(['ArrowRight','ArrowDown'].includes(event.key)?1:-1)+worlds.length)%worlds.length;
+        worlds[next].focus();
       }
     });
   });
-  system?.addEventListener('click', event => {
-    if (event.target.closest('.space-world') || event.detail === 0) return;
-    stopJourney(); selected = -1; docked = -1; worlds.forEach(world => world.setAttribute('aria-pressed', 'false'));
-    const rect = system.getBoundingClientRect();
-    travel({ x: Math.max(35, Math.min(940, (event.clientX - rect.left) / rect.width * 1000)),
-      y: Math.max(30, Math.min(650, (event.clientY - rect.top) / rect.height * 700)) });
-    hero.querySelector('.space-destination').textContent = 'BETWEEN WORLDS / EXPLORING';
-    hero.querySelector('.space-description').textContent = 'Following curiosity across signals, looking for shared representations.';
-    const link = hero.querySelector('.space-related'); link.href = '#selected-work'; link.textContent = 'Discover the connections ↗';
-    announcement.textContent = 'Exploring the space between modalities.';
+  function dismissConsole() {
+    const returnIndex=docked;
+    hideConsole();docked=-1;selected=-1;voyager.dataset.state='idle';
+    worlds.forEach(world=>world.setAttribute('aria-pressed','false'));
+    hero.querySelector('.space-destination').textContent='DH–01 / READY FOR DEPARTURE';
+    hero.querySelector('.space-description').textContent='Click open space to fly, or choose your next world.';
+    if(document.activeElement?.closest('.ship-console')&&returnIndex>=0)worlds[returnIndex].focus({preventScroll:true});
+  }
+  consoleClose?.addEventListener('click',()=>{stopJourney();dismissConsole();});
+  consolePanel?.addEventListener('pointerenter',()=>{hoveredConsole=true;});
+  consolePanel?.addEventListener('pointerleave',()=>{hoveredConsole=false;});
+  system?.addEventListener('click',event=>{
+    if(event.target.closest('.space-world,.ship-console')||event.detail===0)return;
+    stopJourney();selected=-1;docked=-1;worlds.forEach(world=>world.setAttribute('aria-pressed','false'));
+    if(document.activeElement?.closest('.space-world,.ship-console'))document.activeElement.blur();
+    const rect=system.getBoundingClientRect();
+    travel({x:Math.max(35,Math.min(965,(event.clientX-rect.left)/rect.width*1000)),y:Math.max(30,Math.min(660,(event.clientY-rect.top)/rect.height*700))});
+    hero.querySelector('.space-destination').textContent='DH–01 / FREE FLIGHT';
+    hero.querySelector('.space-description').textContent='Following curiosity across the latent universe. Select a world to land.';
+    hero.querySelector('.space-related').hidden=true;
+    announcement.textContent='Flying to a new position.';
   });
   function nextWorld() {
     if (!automatic || !visible || !heroVisible) { stopJourney(); return; }
@@ -225,7 +286,7 @@
     if (automatic) { stopJourney(); finishFlight?.(); return; }
     automatic = true; cruise.setAttribute('aria-pressed', 'true'); cruise.textContent = 'Pause journey Ⅱ'; nextWorld();
   });
-  hero?.addEventListener('keydown', event => { if (event.key === 'Escape') { stopJourney(); finishFlight?.(); } });
+  hero?.addEventListener('keydown', event => { if (event.key === 'Escape') { stopJourney(); finishFlight?.(); dismissConsole(); } });
   motion?.addEventListener('click', () => { paused = !paused; syncMotion(); });
   reduced.addEventListener('change', event => { paused = event.matches; syncMotion(); });
   document.addEventListener('visibilitychange', () => {

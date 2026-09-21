@@ -11,17 +11,35 @@
     <a class="space-enter" href="#research">Discover my research <span aria-hidden="true">↘</span></a>
   </div>
   <div class="space-system" role="group" aria-label="Explore the modality planets" aria-describedby="space-help">
-    <svg class="space-routes" viewBox="0 0 1000 700" preserveAspectRatio="none" fill="none" aria-hidden="true"><ellipse cx="718" cy="365" rx="210" ry="222" transform="rotate(24 718 365)"/><g class="space-memories"></g><path class="space-flight" d=""/></svg>
-    <a class="space-world world-ecg" style="--px:64%;--py:24%;--world:#8fd4bf" data-world="ecg" href="#research" aria-label="Explore ECG" aria-controls="space-detail"><span class="world-globe" aria-hidden="true"></span><span class="world-caption"><small>01 / BIOSIGNALS</small><strong>ECG</strong></span></a>
-    <a class="space-world world-vision" style="--px:86%;--py:42%;--world:#dfb183" data-world="vision" href="projects/balanced-rppg.html" aria-label="Explore Vision" aria-controls="space-detail"><span class="world-globe" aria-hidden="true"></span><span class="world-caption"><small>02 / PERCEPTION</small><strong>Vision</strong></span></a>
-    <a class="space-world world-emotion" style="--px:62%;--py:73%;--world:#b7a6e5" data-world="emotion" href="projects/inter-dialog.html" aria-label="Explore Emotion Recognition" aria-controls="space-detail"><span class="world-globe" aria-hidden="true"></span><span class="world-caption"><small>03 / TEXT + AUDIO</small><strong>Emotion<br>Recognition</strong></span></a>
-    <a class="space-world world-wearables" style="--px:87%;--py:76%;--world:#c8bf8c" data-world="wearables" href="publications.html#wearable-physiomarkers" aria-label="Explore Wearables" aria-controls="space-detail"><span class="world-globe" aria-hidden="true"></span><span class="world-caption"><small>04 / PHYSIOLOGY</small><strong>Wearables</strong></span></a>
-    <div class="space-voyager" style="left:73%;top:49%" aria-hidden="true"><span class="voyager-ship">✧</span><span class="voyager-name">DH–01 <small>EXPLORER</small></span></div>
+    <svg class="space-routes" viewBox="0 0 1000 700" preserveAspectRatio="none" fill="none" aria-hidden="true"><path class="space-orbit-track" d=""/><g class="space-memories"></g><path class="space-flight" d=""/></svg>
+    <a class="space-world world-ecg" style="--px:64%;--py:24%;--world:#8fd4bf" data-world="ecg" href="#research" aria-label="Explore ECG" aria-controls="ship-console"><span class="world-globe" aria-hidden="true"></span><span class="world-caption"><small>01 / BIOSIGNALS</small><strong>ECG</strong></span></a>
+    <a class="space-world world-vision" style="--px:86%;--py:42%;--world:#dfb183" data-world="vision" href="projects/balanced-rppg.html" aria-label="Explore Vision" aria-controls="ship-console"><span class="world-globe" aria-hidden="true"></span><span class="world-caption"><small>02 / PERCEPTION</small><strong>Vision</strong></span></a>
+    <a class="space-world world-emotion" style="--px:62%;--py:73%;--world:#b7a6e5" data-world="emotion" href="projects/inter-dialog.html" aria-label="Explore Emotion Recognition" aria-controls="ship-console"><span class="world-globe" aria-hidden="true"></span><span class="world-caption"><small>03 / TEXT + AUDIO</small><strong>Emotion<br>Recognition</strong></span></a>
+    <a class="space-world world-wearables" style="--px:87%;--py:76%;--world:#c8bf8c" data-world="wearables" href="publications.html#wearable-physiomarkers" aria-label="Explore Wearables" aria-controls="ship-console"><span class="world-globe" aria-hidden="true"></span><span class="world-caption"><small>04 / PHYSIOLOGY</small><strong>Wearables</strong></span></a>
+    <div class="space-voyager" style="left:62%;top:67%" data-state="idle" aria-hidden="true">
+      <svg class="voyager-ship" viewBox="0 0 64 72" fill="none">
+        <defs><linearGradient id="ship-metal" x1="14" y1="15" x2="48" y2="56" gradientUnits="userSpaceOnUse"><stop stop-color="#f2f6ef"/><stop offset=".45" stop-color="#91a8b1"/><stop offset="1" stop-color="#354d60"/></linearGradient><linearGradient id="ship-flame" x1="32" y1="47" x2="32" y2="72" gradientUnits="userSpaceOnUse"><stop stop-color="#e5ffff"/><stop offset=".3" stop-color="#81e9e9"/><stop offset="1" stop-color="#56aed9" stop-opacity="0"/></linearGradient></defs>
+        <g class="ship-engine"><path d="M26 46 Q23 59 32 71 Q41 59 38 46Z" fill="url(#ship-flame)"/><path d="M29 45 Q28 56 32 62 Q36 56 35 45Z" fill="#edffff"/></g>
+        <path d="M26 29 8 48 8 55 27 48M38 29 56 48 56 55 37 48" fill="#526e7e" stroke="#b0c8cd" stroke-width=".9"/>
+        <path d="M32 5 C27 12 22 30 24 48 L29 53 35 53 40 48 C42 30 37 12 32 5Z" fill="url(#ship-metal)" stroke="#d4e9e9" stroke-width=".8"/>
+        <path d="M32 16 C29 22 28 28 28 33 L36 33 C36 28 35 22 32 16Z" fill="#102f43" stroke="#96e8ef" stroke-width="1.2"/>
+        <path d="M32 36V48M26 43H38" stroke="#536e7f"/>
+        <path d="M23 48 19 56M41 48 45 56" stroke="#bad2d4" stroke-width="2" class="ship-legs"/>
+        <circle cx="11" cy="49" r="1.5" fill="#9ce9d3"/><circle cx="53" cy="49" r="1.5" fill="#e7b88f"/>
+      </svg>
+      <span class="voyager-name">DH–01 <small>EXPLORER</small></span>
+    </div>
+    <div class="ship-console" id="ship-console" role="region" aria-label="Spaceship landing message" hidden>
+      <div class="console-topline"><span><i></i> LANDING CONFIRMED</span><button class="console-close" type="button" aria-label="Dismiss landing message">×</button></div>
+      <p class="console-title"></p><p class="console-description"></p>
+      <a class="console-link" href="#research">Explore this research <span aria-hidden="true">↗</span></a>
+      <span class="console-telemetry" aria-hidden="true">DH–01 · SURFACE LINK ESTABLISHED</span>
+    </div>
     <span class="space-field-label" aria-hidden="true">THE LATENT FIELD<br><b>∞ POSSIBLE CONNECTIONS</b></span>
   </div>
   <div class="space-bottom">
-    <div class="space-detail" id="space-detail"><p class="space-destination">EXPLORER / DONG-HYUK LEE</p><p class="space-description">Moving freely between modalities.<br>Finding the representations that connect them.</p><a class="space-related" href="#selected-work">View selected work <span aria-hidden="true">↗</span></a><span class="sr-only space-announcement" role="status" aria-live="polite"></span></div>
-    <div class="space-guide"><p id="space-help">Choose a world. Follow your curiosity.</p><button class="space-cruise" type="button" aria-pressed="false" hidden>Start journey <span aria-hidden="true">↗</span></button><a href="#research" class="space-scroll">SCROLL TO DISCOVER <span aria-hidden="true">↓</span></a></div>
+    <div class="space-detail" id="space-detail"><p class="space-destination">EXPLORER / DONG-HYUK LEE</p><p class="space-description">Your curiosity is the flight path.<br>Touch down to explore each field.</p><a class="space-related" href="#selected-work">View selected work <span aria-hidden="true">↗</span></a><span class="sr-only space-announcement" role="status" aria-live="polite"></span></div>
+    <div class="space-guide"><p id="space-help">Click space to fly. Select a world to land.</p><button class="space-cruise" type="button" aria-pressed="false" hidden>Start journey <span aria-hidden="true">↗</span></button><a href="#research" class="space-scroll">SCROLL TO DISCOVER <span aria-hidden="true">↓</span></a></div>
   </div>
 </section>
 <section class="space-mission container" aria-label="Research mission"><div><span class="eyebrow">THE MISSION</span><h2>Learning representations.<br><em>Understanding signals.</em></h2></div><p>PROFILE_INTRO</p><div class="mission-facts"><div><span>CURRENTLY</span><strong>Medical AI Co., Ltd.</strong></div><div><span>PREVIOUSLY</span><strong>NeuroAI Lab. · Kwangwoon Univ.</strong></div><div><span>RESEARCH INTERESTS</span><strong>Representation · Multimodal · Biosignals</strong></div></div></section>

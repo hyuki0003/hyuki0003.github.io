@@ -1,122 +1,154 @@
-/* Analytic ray/sphere and ray/ring intersections. No external 3D dependency. */
+/* The renderer and all satellites share this orthographic 3D scene. */
 window.createLatentPlanet = function createLatentPlanet(hero) {
   const surface = hero.querySelector('.space-planet-stage');
   if (!surface) return null;
   const canvas = document.createElement('canvas');
   canvas.setAttribute('aria-hidden', 'true');
-  const gl = canvas.getContext('webgl', { alpha: true, antialias: false, premultipliedAlpha: false, powerPreference: 'low-power' });
-  if (!gl) return null;
-  const vertex = `attribute vec2 position; void main(){gl_Position=vec4(position,0.,1.);}`;
+  surface.append(canvas);
+  const gl = canvas.getContext('webgl', { alpha: true, antialias: true, premultipliedAlpha: false });
+  const normalize = v => { const length = Math.hypot(...v); return v.map(n => n / length); };
+  const cross = (a, b) => [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];
+  let scene, lastTime = 0, ready = false, textureReady = false;
+  let program, locations, texture;
+  function updateScene(seconds) {
+    const normal = normalize([-.35 + .008*Math.sin(seconds*.055), .84, .415 + .008*Math.sin(seconds*.04)]);
+    scene.normal = normal;
+    scene.axis = normalize([normal[1], -normal[0], 0]);
+    scene.other = cross(normal, scene.axis);
+  }
+  function project(angle, radius = 2.12) {
+    const point = scene.axis.map((v, i) => radius*(v*Math.cos(angle) + scene.other[i]*Math.sin(angle)));
+    const disk = point[0]*point[0]+point[1]*point[1];
+    return { x: scene.cx+point[0]*scene.scale, y: scene.cy-point[1]*scene.scale,
+      z: point[2], occluded: disk < .99 && point[2] < Math.sqrt(1-disk),
+      scale: .92 + point[2]*.07 };
+  }
+  const vertex = 'attribute vec2 position;void main(){gl_Position=vec4(position,0.,1.);}';
   const fragment = `
     precision highp float;
-    uniform vec2 resolution;
-    uniform vec2 center;
-    uniform float clock;
-    const float R=1.18;
-    float hash(vec3 p){p=fract(p*.3183099+vec3(.11,.17,.13));p*=17.;return fract(p.x*p.y*p.z*(p.x+p.y+p.z));}
-    float noise(vec3 x){vec3 i=floor(x),f=fract(x);f=f*f*(3.-2.*f);
-      return mix(mix(mix(hash(i),hash(i+vec3(1,0,0)),f.x),mix(hash(i+vec3(0,1,0)),hash(i+vec3(1,1,0)),f.x),f.y),
-      mix(mix(hash(i+vec3(0,0,1)),hash(i+vec3(1,0,1)),f.x),mix(hash(i+vec3(0,1,1)),hash(i+vec3(1,1,1)),f.x),f.y),f.z);}
-    float fbm(vec3 p){float sum=0.,a=.5;for(int i=0;i<5;i++){sum+=a*noise(p);p=p*2.04+vec3(13.1,7.7,3.2);a*=.5;}return sum;}
-    float sphere(vec3 ro,vec3 rd,float radius){float b=dot(ro,rd),c=dot(ro,ro)-radius*radius,h=b*b-c;if(h<0.)return 10000.;return -b-sqrt(h);}
-    mat2 turn(float a){return mat2(cos(a),-sin(a),sin(a),cos(a));}
-    void main(){
-      vec2 uv=(gl_FragCoord.xy-resolution*center)/resolution.y;
-      vec3 ro=vec3(0.,0.,4.8),rd=normalize(vec3(uv*2.2,-3.5));
-      vec3 light=normalize(vec3(-1.1,.75,.55));
-      float hit=sphere(ro,rd,R);
-      vec3 color=vec3(0.);float alpha=0.;
-      if(hit<1000.){
-        vec3 p=ro+rd*hit,n=p/R,q=n;
-        q.xz=turn(clock*.055)*q.xz;
-        q.xy=turn(-.23)*q.xy;
-        float turbulence=fbm(q*4.);
-        float bands=sin(q.y*38.+turbulence*10.+fbm(q*14.)*2.8);
-        float wisps=fbm(q*32.+vec3(turbulence*5.,0.,0.));
-        float cloud=smoothstep(-.7,.95,bands*.6+(wisps-.5)*1.5);
-        vec3 dark=vec3(.018,.064,.077),teal=vec3(.09,.23,.25),cream=vec3(.29,.42,.40);
-        vec3 albedo=mix(dark,teal,cloud);
-        albedo=mix(albedo,cream,pow(cloud,5.)*.56);
-        float diffuse=max(dot(n,light),0.);
-        float rim=pow(1.-max(dot(n,-rd),0.),3.5);
-        color=albedo*(.045+1.2*pow(diffuse,1.15))+vec3(.26,.58,.64)*rim*pow(diffuse,.55)*.55;
-        color+=vec3(.42,.55,.52)*pow(max(dot(reflect(-light,n),-rd),0.),32.)*.08;
-        alpha=1.;
-      }
-      // A slowly precessing, inclined ring plane; particles move around the planet.
-      vec3 normal=normalize(vec3(-.38+.02*sin(clock*.08),.87,.24+.025*sin(clock*.065)));
-      float denominator=dot(rd,normal);
-      if(abs(denominator)>.0001){
-        float ringHit=-dot(ro,normal)/denominator;
-        vec3 p=ro+rd*ringHit;float radius=length(p);
-        if(ringHit>0.&&ringHit<hit&&radius>1.47&&radius<2.46){
-          vec3 axis=normalize(cross(normal,vec3(0.,0.,1.))),other=cross(normal,axis);
-          float angle=atan(dot(p,other),dot(p,axis));
-          float grain=noise(vec3(radius*145.,cos(angle-clock*.085)*14.,sin(angle-clock*.085)*14.));
-          float lines=.5+.5*sin(radius*390.+noise(vec3(radius*38.))*4.);
-          float density=.30+.38*grain+.22*lines;
-          density*=smoothstep(1.47,1.53,radius)*(1.-smoothstep(2.34,2.46,radius));
-          density*=1.-.85*exp(-pow((radius-1.87)*37.,2.));
-          density*=1.-.50*exp(-pow((radius-2.18)*65.,2.));
-          float shadow=sphere(p+light*.01,light,R);
-          float lit=shadow>0.&&shadow<1000.?.15:1.;
-          vec3 ringColor=mix(vec3(.19,.26,.27),vec3(.64,.56,.40),grain*.65+lines*.35);
-          ringColor*=lit*(.65+.25*abs(dot(normal,light)));
-          float spark=pow(max(0.,sin(angle*43.-clock*.55+radius*55.)),40.)*.12*grain;
-          ringColor+=vec3(.4,.65,.63)*spark;
-          float a=density*.70;
-          color=(ringColor*a+color*alpha*(1.-a))/max(.001,a+alpha*(1.-a));alpha=a+alpha*(1.-a);
-        }
-      }
-      float distanceToRay=length(ro-rd*dot(ro,rd));
-      if(hit>1000.&&distanceToRay>R){
-        float glow=exp(-(distanceToRay-R)*37.)*.16;
-        vec3 glowColor=vec3(.21,.48,.55);
-        color=(color*alpha+glowColor*glow*(1.-alpha))/max(.001,alpha+glow*(1.-alpha));alpha+=glow*(1.-alpha);
-      }
-      gl_FragColor=vec4(pow(max(color,vec3(0.)),vec3(.87)),alpha);
-    }`;
-  let program, buffer, locations, alive = false, lastTime = 0;
-  function shader(type, source) {
-    const result = gl.createShader(type); gl.shaderSource(result, source); gl.compileShader(result);
-    if (!gl.getShaderParameter(result, gl.COMPILE_STATUS)) {
-      const message = gl.getShaderInfoLog(result); gl.deleteShader(result); throw new Error(message);
+    uniform vec2 resolution, center;
+    uniform float pixelsPerUnit, clock, hasTexture;
+    uniform vec3 ringNormal, ringAxis, ringOther;
+    uniform sampler2D clouds;
+    const float PI=3.14159265359;
+    float hash(float x){return fract(sin(x*127.1)*43758.5453);}
+    float noise(float x){float i=floor(x),f=fract(x);return mix(hash(i),hash(i+1.),f*f*(3.-2.*f));}
+    float ringDensity(float radius){
+      float radial=.32+.25*noise(radius*53.)+.20*noise(radius*137.)+.15*noise(radius*389.);
+      float aa=1./pixelsPerUnit;
+      radial+=.12*sin(radius*740.)*clamp(1.-aa*170.,0.,1.);
+      radial*=smoothstep(1.28,1.33,radius)*(1.-smoothstep(2.31,2.42,radius));
+      radial*=1.-.94*exp(-pow((radius-1.96)*52.,2.));
+      radial*=1.-.65*exp(-pow((radius-2.27)*85.,2.));
+      return radial;
     }
-    return result;
+    vec3 tonemap(vec3 x){return clamp((x*(2.51*x+.03))/(x*(2.43*x+.59)+.14),0.,1.);}
+    void main(){
+      vec2 p=(gl_FragCoord.xy-center)/pixelsPerUnit;
+      vec3 light=normalize(vec3(-.85,.65,.72));
+      float disk=dot(p,p),pixel=1./pixelsPerUnit;
+      vec3 color=vec3(0.);float alpha=0.,front=-100.;
+      if(disk<1.){
+        front=sqrt(1.-disk);vec3 n=vec3(p,front);
+        float latitude=asin(clamp(dot(n,ringNormal),-1.,1.));
+        float longitude=atan(dot(n,ringOther),dot(n,ringAxis));
+        vec2 uv=vec2(fract(longitude/(2.*PI)+.5+clock*.004),latitude/PI+.5);
+        vec3 tex=mix(texture2D(clouds,vec2(fract(uv.x+.5),uv.y)).rgb,texture2D(clouds,uv).rgb,smoothstep(0.,.08,min(uv.x,1.-uv.x)));
+        float fallback=.5+.2*sin(latitude*47.+noise(longitude*8.)*.8);
+        tex=mix(mix(vec3(.12,.25,.28),vec3(.52,.61,.59),fallback),tex,hasTexture);
+        vec3 albedo=pow(tex,vec3(2.2));
+        float diffuse=max(dot(n,light),0.);
+        float shadow=1.;
+        float t=-dot(n,ringNormal)/dot(light,ringNormal);
+        float shadowRadius=length(n+light*t);
+        if(t>.015&&shadowRadius>1.28&&shadowRadius<2.42)shadow=1.-.72*ringDensity(shadowRadius);
+        float limb=pow(1.-front,3.4);
+        color=albedo*(.018+diffuse*1.2*shadow);
+        color+=vec3(.045,.17,.21)*limb*pow(diffuse,.5);
+        alpha=1.-smoothstep(1.-pixel*1.3,1.,sqrt(disk));
+      }
+      float z=-(p.x*ringNormal.x+p.y*ringNormal.y)/ringNormal.z;
+      vec3 ringPoint=vec3(p,z);float radius=length(ringPoint);
+      if(radius>1.28&&radius<2.42&&(disk>=1.||z>front)){
+        float angle=atan(dot(ringPoint,ringOther),dot(ringPoint,ringAxis));
+        float dust=.94+.06*sin(angle*93.-clock*.22+radius*130.);
+        float density=ringDensity(radius)*dust;
+        float b=dot(ringPoint,light),c=dot(ringPoint,ringPoint)-1.;
+        float shadow=(b<0.&&b*b>c)? .11:1.;
+        float band=noise(radius*95.)*.5+noise(radius*32.)*.5;
+        vec3 ice=mix(vec3(.24,.32,.34),vec3(.63,.58,.47),band);
+        vec3 ringColor=pow(ice,vec3(2.2))*(.65+.55*abs(dot(ringNormal,light)))*shadow;
+        ringColor+=vec3(.035,.08,.085)*pow(max(0.,sin(angle*157.-clock*.5+radius*531.)),28.)*shadow;
+        float a=density*.9;
+        color=(ringColor*a+color*alpha*(1.-a))/max(.001,a+alpha*(1.-a));alpha=a+alpha*(1.-a);
+      }
+      if(disk>1.){
+        float glow=exp(-(sqrt(disk)-1.)*90.)*.34;
+        float sun=max(0.,dot(normalize(vec3(p,.25)),light));
+        glow*=sun;
+        color=(color*alpha+vec3(.10,.34,.40)*glow*(1.-alpha))/max(.001,alpha+glow*(1.-alpha));alpha+=glow*(1.-alpha);
+      }
+      gl_FragColor=vec4(pow(tonemap(color),vec3(1./2.2)),alpha);
+    }`;
+  function compile(type, source) {
+    const shader=gl.createShader(type);gl.shaderSource(shader,source);gl.compileShader(shader);
+    if(!gl.getShaderParameter(shader,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(shader));
+    return shader;
+  }
+  const cloudImage = new Image();
+  function uploadTexture() {
+    if(!ready||!cloudImage.complete||!cloudImage.naturalWidth)return;
+    gl.bindTexture(gl.TEXTURE_2D,texture);gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,true);
+    gl.texImage2D(gl.TEXTURE_2D,0,gl.RGB,gl.RGB,gl.UNSIGNED_BYTE,cloudImage);
+    gl.generateMipmap(gl.TEXTURE_2D);textureReady=true;
+    canvas.dataset.texture='loaded';draw(lastTime);
   }
   function initialize() {
+    if(!gl)return;
     try {
-      const vs = shader(gl.VERTEX_SHADER, vertex), fs = shader(gl.FRAGMENT_SHADER, fragment);
-      program = gl.createProgram(); gl.attachShader(program, vs); gl.attachShader(program, fs); gl.linkProgram(program);
-      gl.deleteShader(vs); gl.deleteShader(fs);
-      if (!gl.getProgramParameter(program, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(program));
-      gl.useProgram(program); buffer = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,1,-1,-1,1,-1,1,1,-1,1,1]), gl.STATIC_DRAW);
-      const attribute = gl.getAttribLocation(program, 'position'); gl.enableVertexAttribArray(attribute); gl.vertexAttribPointer(attribute, 2, gl.FLOAT, false, 0, 0);
-      locations = Object.fromEntries(['resolution','center','clock'].map(name => [name,gl.getUniformLocation(program,name)]));
-      alive = true; resize(); hero.classList.add('has-live-planet'); canvas.dataset.renderer = 'webgl';
-    } catch (error) {
-      alive = false; hero.classList.remove('has-live-planet'); canvas.dataset.renderer = 'fallback';
-      console.warn('Using the static Latent planet fallback.', error.message);
-    }
+      const vs=compile(gl.VERTEX_SHADER,vertex),fs=compile(gl.FRAGMENT_SHADER,fragment);
+      program=gl.createProgram();gl.attachShader(program,vs);gl.attachShader(program,fs);gl.linkProgram(program);
+      gl.deleteShader(vs);gl.deleteShader(fs);
+      if(!gl.getProgramParameter(program,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(program));
+      gl.useProgram(program);
+      const buffer=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buffer);
+      gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,3,-1,-1,3]),gl.STATIC_DRAW);
+      const position=gl.getAttribLocation(program,'position');gl.enableVertexAttribArray(position);gl.vertexAttribPointer(position,2,gl.FLOAT,false,0,0);
+      locations=Object.fromEntries(['resolution','center','pixelsPerUnit','clock','hasTexture','ringNormal','ringAxis','ringOther','clouds'].map(name=>[name,gl.getUniformLocation(program,name)]));
+      texture=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,texture);
+      gl.texImage2D(gl.TEXTURE_2D,0,gl.RGB,1,1,0,gl.RGB,gl.UNSIGNED_BYTE,new Uint8Array([80,110,115]));
+      gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.REPEAT);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);gl.generateMipmap(gl.TEXTURE_2D);
+      const anisotropic=gl.getExtension('EXT_texture_filter_anisotropic');
+      if(anisotropic)gl.texParameterf(gl.TEXTURE_2D,anisotropic.TEXTURE_MAX_ANISOTROPY_EXT,Math.min(8,gl.getParameter(anisotropic.MAX_TEXTURE_MAX_ANISOTROPY_EXT)));
+      ready=true;textureReady=false;uploadTexture();resize();
+      hero.classList.add('has-live-planet');canvas.dataset.renderer='webgl';
+    }catch(error){ready=false;canvas.dataset.renderer='fallback';hero.classList.remove('has-live-planet');console.warn('Using the static Latent planet.',error.message);}
   }
   function draw(seconds) {
-    lastTime = seconds;
-    if (!alive || gl.isContextLost()) return;
-    gl.useProgram(program); gl.uniform2f(locations.resolution, canvas.width, canvas.height);
-    gl.uniform2f(locations.center, window.innerWidth <= 800 ? .54 : .76, .51);
-    gl.uniform1f(locations.clock, seconds); gl.drawArrays(gl.TRIANGLES, 0, 6);
+    lastTime=seconds;updateScene(seconds);
+    if(!ready||gl.isContextLost())return;
+    gl.useProgram(program);gl.uniform2f(locations.resolution,canvas.width,canvas.height);
+    gl.uniform2f(locations.center,scene.cx*scene.ratio,(scene.height-scene.cy)*scene.ratio);
+    gl.uniform1f(locations.pixelsPerUnit,scene.scale*scene.ratio);
+    gl.uniform1f(locations.clock,seconds);gl.uniform1f(locations.hasTexture,textureReady?1:0);
+    gl.uniform3fv(locations.ringNormal,scene.normal);gl.uniform3fv(locations.ringAxis,scene.axis);gl.uniform3fv(locations.ringOther,scene.other);
+    gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,texture);gl.uniform1i(locations.clouds,0);
+    gl.drawArrays(gl.TRIANGLES,0,3);
   }
   function resize() {
-    const rect = surface.getBoundingClientRect();
-    const scale = Math.min(window.devicePixelRatio || 1, 1.25, 1100 / Math.max(1,rect.width));
-    canvas.width = Math.max(1,Math.round(rect.width*scale)); canvas.height = Math.max(1,Math.round(rect.height*scale));
-    gl.viewport(0,0,canvas.width,canvas.height); draw(lastTime);
+    const bounds=surface.getBoundingClientRect(),compact=window.innerWidth<=800;
+    const ratio=Math.min(window.devicePixelRatio||1,1.75,2400/Math.max(1,bounds.width),Math.sqrt(2800000/Math.max(1,bounds.width*bounds.height)));
+    scene={width:bounds.width,height:bounds.height,ratio,cx:bounds.width*(compact?.5:.705),cy:bounds.height*(compact?.46:.50),
+      scale:Math.min(bounds.width*(compact?.205:.132),bounds.height*.37)};
+    updateScene(lastTime);
+    canvas.width=Math.max(1,Math.round(bounds.width*ratio));canvas.height=Math.max(1,Math.round(bounds.height*ratio));
+    if(gl)gl.viewport(0,0,canvas.width,canvas.height);draw(lastTime);
   }
-  canvas.addEventListener('webglcontextlost', event => {
-    event.preventDefault(); alive = false; hero.classList.remove('has-live-planet'); canvas.dataset.renderer = 'fallback';
-  });
-  canvas.addEventListener('webglcontextrestored', initialize);
-  surface.append(canvas); initialize();
-  return { draw, resize };
+  cloudImage.onload=uploadTexture;
+  cloudImage.src=new URL('space/latent-atmosphere.webp',document.currentScript?.src||new URL('assets/planet.js',document.baseURI)).href;
+  canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();ready=false;hero.classList.remove('has-live-planet');canvas.dataset.renderer='fallback';});
+  canvas.addEventListener('webglcontextrestored',initialize);
+  resize();initialize();
+  return {draw,resize,project,getScene:()=>scene};
 };
