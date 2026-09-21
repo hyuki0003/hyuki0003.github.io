@@ -77,6 +77,7 @@
     if (motion) { motion.textContent = paused ? '▷' : 'Ⅱ'; motion.hidden = false; }
     cancelAnimationFrame(frameId); frameId = 0;
     if (paused) { stopJourney(); finishFlight?.(); pointer = { x: 0, y: 0 }; }
+    if (atLaunchPad) positionOnLaunchPad();
     startRendering();
   }
   window.addEventListener('resize', resize, { passive: true });
@@ -99,11 +100,12 @@
   const consolePanel = hero?.querySelector('.ship-console');
   const consoleLink = hero?.querySelector('.console-link');
   const consoleClose = hero?.querySelector('.console-close');
+  const launchPad = hero?.querySelector('.launch-pad');
   let position = { x: 620, y: 620 };
   let flightId = 0, timer = 0, selected = -1;
   let automatic = false, finishFlight = null;
-  let orbitTime = 0, docked = -1, hoveredConsole = false, shipDepth = 3;
-  let orbitLayout = null, consoleSize = { width: 260, height: 210 }, positioned = false;
+  let orbitTime = 0, docked = -1, hoveredConsole = false, shipDepth = 3, shipHeading = 0;
+  let orbitLayout = null, consoleSize = { width: 260, height: 210 }, atLaunchPad = true;
   const phases = worlds.map((_, index) => Math.PI * 1.15 + index * Math.PI * 2 / worlds.length);
   const descriptions = {
     introduction: ['Introduction', 'Meet the researcher exploring connections across signals.', 'Meet Dong-Hyuk Lee'],
@@ -117,21 +119,27 @@
     const rect = system.getBoundingClientRect();
     orbitLayout = { width: rect.width, height: rect.height,
       shipWidth:voyager.offsetWidth, shipHeight:voyager.offsetHeight, radius: globes.map(globe => globe.offsetWidth / 2) };
-    if (!positioned) {
-      place({ x: window.innerWidth <= 800 ? 180 : 545, y: 690 * .76 }); positioned = true;
-    }
+    if (atLaunchPad) positionOnLaunchPad();
     if (consolePanel && !consolePanel.hidden) measureConsole();
     updateOrbit(0); drawOrbitTrack();
     if (finishFlight) finishFlight();
   }
-  function planetPosition(index) {
-    const point = planetRenderer?.project(phases[index] + orbitTime);
+  function positionOnLaunchPad() {
+    if (!launchPad || !orbitLayout) return;
+    const pad=launchPad.getBoundingClientRect(), field=system.getBoundingClientRect();
+    const shipHeight=voyager.querySelector('.voyager-ship').getBoundingClientRect().height;
+    shipDepth=3;
+    place({x:(pad.left+pad.width/2-field.left)/field.width*1000,
+      y:(pad.top+1-shipHeight*(56/72-.5)-field.top)/field.height*700});
+  }
+  function planetPosition(index, advance = 0) {
+    const point = planetRenderer?.project(phases[index] + orbitTime + advance);
     if (point) return { ...point, x: point.x / orbitLayout.width * 1000, y: point.y / orbitLayout.height * 700 };
-    const angle = phases[index] + orbitTime;
+    const angle = phases[index] + orbitTime + advance;
     return { x: 700 + Math.cos(angle) * 225, y: 350 + Math.sin(angle) * 140, z: 0, scale: 1, occluded: false };
   }
-  function dockingPosition(index) {
-    const point = planetPosition(index), radius = orbitLayout.radius[index] * point.scale;
+  function dockingPosition(index, advance = 0) {
+    const point = planetPosition(index,advance), radius = orbitLayout.radius[index] * point.scale;
     return { x: point.x - radius * .10 / orbitLayout.width * 1000,
       y: point.y - radius * .82 / orbitLayout.height * 700 };
   }
@@ -148,7 +156,8 @@
       world.classList.toggle('is-behind', point.z < 0);
       world.style.zIndex = point.z > 0 ? '4' : '2';
     });
-    if (docked >= 0 && !finishFlight) { shipDepth=planetPosition(docked).z; place(dockingPosition(docked)); positionConsole(); }
+    if (docked >= 0 && !finishFlight) { shipDepth=planetPosition(docked).z; place(dockingPosition(docked)); orientShip(-12,delta); positionConsole(); }
+    if (atLaunchPad) positionOnLaunchPad();
   }
   function applyOcclusion(element, x, y, depth, width, height, scale = 1) {
     const scene=planetRenderer?.getScene();
@@ -180,7 +189,15 @@
   function place(point) {
     position = point;
     voyager.style.left = `${point.x / 10}%`; voyager.style.top = `${point.y / 7}%`;
-    if (orbitLayout) applyOcclusion(voyager,point.x/1000*orbitLayout.width,point.y/700*orbitLayout.height,shipDepth,orbitLayout.shipWidth,orbitLayout.shipHeight);
+    const scale=atLaunchPad?1:Math.max(.72,Math.min(1.08,.92+shipDepth*.065));
+    voyager.style.setProperty('--ship-scale',String(scale));
+    if (orbitLayout) applyOcclusion(voyager,point.x/1000*orbitLayout.width,point.y/700*orbitLayout.height,shipDepth,orbitLayout.shipWidth,orbitLayout.shipHeight,scale);
+  }
+  function orientShip(angle,delta=16) {
+    const difference=((angle-shipHeading)%360+540)%360-180;
+    const elapsed=Math.max(0,delta),turn=difference*(1-Math.exp(-elapsed/170));
+    shipHeading+=Math.max(-elapsed*.20,Math.min(elapsed*.20,turn));
+    voyager.style.setProperty('--heading',`${shipHeading}deg`);
   }
   function measureConsole() {
     consoleSize = { width: consolePanel.offsetWidth, height: consolePanel.offsetHeight };
@@ -205,61 +222,47 @@
     announcement.textContent=`Landed on ${title}. ${label} is available in the landing message.`;
     if (keyboard) consoleLink.focus({preventScroll:true});
   }
-  // Fly directly when clear. Otherwise join two tangents with the shortest arc
-  // on the hull-clearance sphere, rather than following the satellites' radius.
-  function createFlightPath(from, initialTarget, clearance) {
-    const unit = vector => { const length=Math.hypot(...vector); return vector.map(v=>v/length); };
-    const dot=(a,b)=>a.reduce((sum,v,i)=>sum+v*b[i],0);
-    const mix=(a,b,t)=>a.map((v,i)=>v+(b[i]-v)*t);
-    const a=unit(from), b=unit(initialTarget), alignment=dot(a,b);
-    // Near opposite endpoints, retain one turning side throughout interception.
-    // Both legs still hug the clearance sphere; neither can flip through it.
-    const rejection=b.map((v,i)=>v-alignment*a[i]);
-    const side=Math.hypot(...rejection)>.05?unit(rejection):
-      unit(Math.hypot(a[0],a[1])>.1?[-a[1],a[0],0]:[1,0,0]);
-    const waypoint=alignment<-.94?side.map(v=>v*clearance):null;
-    function segment(start,end) {
-      const startRadius=Math.hypot(...start), endRadius=Math.hypot(...end);
-      const u=unit(start), v=unit(end), cosine=Math.max(-1,Math.min(1,dot(u,v)));
-      const angle=Math.acos(cosine), departure=Math.acos(Math.min(1,clearance/startRadius));
-      const arrival=Math.acos(Math.min(1,clearance/endRadius));
-      if(angle<=departure+arrival+1e-10) {
-        return {length:Math.hypot(...end.map((x,i)=>x-start[i])),at:t=>mix(start,end,t)};
+  // A continuous upper transfer changes screen position and camera depth
+  // together. Its radius gently closes toward the body, without tangent joins.
+  function createFlightPath(from, initialTarget, clearance, finalTarget = initialTarget) {
+    const unit=v=>{const radius=Math.hypot(...v);return v.map(n=>n/radius);};
+    function needsUpperRoute(target) {
+      const delta=target.map((v,i)=>v-from[i]);
+      const a=delta[0]**2+delta[2]**2, b=2*(from[0]*delta[0]+from[2]*delta[2]);
+      const c=from[0]**2+from[2]**2-clearance**2;
+      let lo=0,hi=1;
+      if(a>1e-10) {
+        const discriminant=b*b-4*a*c;
+        if(discriminant<=0)return false;
+        const root=Math.sqrt(discriminant);
+        lo=Math.max(0,(-b-root)/(2*a)); hi=Math.min(1,(-b+root)/(2*a));
+        if(lo>=hi)return false;
+      } else if(c>=0)return false;
+      for(let i=0;i<=64;i++) {
+        const t=lo+(hi-lo)*i/64,x=from[0]+delta[0]*t,z=from[2]+delta[2]*t;
+        const roof=Math.sqrt(Math.max(0,clearance**2-x*x-z*z));
+        if(from[1]+delta[1]*t<roof+.025)return true;
       }
-      const axis=unit(v.map((x,i)=>x-cosine*u[i]));
-      const onArc=theta=>u.map((x,i)=>clearance*(x*Math.cos(theta)+axis[i]*Math.sin(theta)));
-      const enter=onArc(departure), leave=onArc(angle-arrival);
-      const first=Math.sqrt(Math.max(0,startRadius**2-clearance**2));
-      const arc=clearance*(angle-departure-arrival);
-      const last=Math.sqrt(Math.max(0,endRadius**2-clearance**2));
-      const length=first+arc+last;
-      return {length,at:t=>{
-        const distance=t*length;
-        if(first>1e-8&&distance<first)return mix(start,enter,distance/first);
-        if(distance<=first+arc)return onArc(departure+(distance-first)/clearance);
-        return last>1e-8?mix(leave,end,(distance-first-arc)/last):end;
-      }};
+      return false;
     }
-    let cachedTarget, legs, length;
-    return (progress, target=initialTarget) => {
+    // Choose once for the whole moving-target envelope, never in mid-flight.
+    let upper=false;
+    for(let i=0;i<=16&&!upper;i++)upper=needsUpperRoute(initialTarget.map((v,k)=>v+(finalTarget[k]-v)*i/16));
+    const startRadius=Math.hypot(...from),start=unit(from);
+    return (progress,target=initialTarget)=>{
       const t=Math.max(0,Math.min(1,progress));
       if(t===0)return from;
       if(t===1)return target;
-      if(target!==cachedTarget) {
-        cachedTarget=target;
-        legs=waypoint?[segment(from,waypoint),segment(waypoint,target)]:[segment(from,target)];
-        length=legs.reduce((sum,leg)=>sum+leg.length,0);
-      }
-      let distance=t*length;
-      for(const leg of legs) {
-        if(distance<=leg.length)return leg.at(leg.length>1e-8?distance/leg.length:1);
-        distance-=leg.length;
-      }
-      return target;
+      if(!upper)return from.map((v,i)=>v+(target[i]-v)*t);
+      const endRadius=Math.hypot(...target),end=unit(target);
+      const direction=unit(start.map((v,i)=>(1-t)**2*v+2*(1-t)*t*(i===1?1.15:0)+t*t*end[i]));
+      const radius=clearance+(startRadius-clearance)*(1-t)**3+(endRadius-clearance)*t**3;
+      return direction.map(v=>v*radius);
     };
   }
   function travel(target, dockIndex = -1, keyboard = false) {
     const fromDepth=shipDepth;
+    atLaunchPad=false;
     docked = -1; hideConsole();
     voyager.dataset.state='flying';
     cancelAnimationFrame(flightId); finishFlight = null;
@@ -269,8 +272,9 @@
     const toScreen=point=>({x:(scene.cx+point[0]*scene.scale)/orbitLayout.width*1000,
       y:(scene.cy-point[1]*scene.scale)/orbitLayout.height*700});
     const destination=()=>toSpace(dockIndex>=0?dockingPosition(dockIndex):target,dockIndex>=0?planetPosition(dockIndex).z:3);
-    const clearance=1+Math.hypot(orbitLayout.shipWidth,orbitLayout.shipHeight)/2/scene.scale+.08;
-    const route=createFlightPath(toSpace(position,fromDepth),destination(),clearance);
+    const clearance=1+Math.hypot(orbitLayout.shipWidth,orbitLayout.shipHeight)*1.08/2/scene.scale+.08;
+    const projectedArrival=dockIndex>=0?toSpace(dockingPosition(dockIndex,.105),planetPosition(dockIndex,.105).z):destination();
+    const route=createFlightPath(toSpace(position,fromDepth),destination(),clearance,projectedArrival);
     let path='';
     trail.style.strokeDasharray='none'; trail.style.strokeDashoffset='0';
     function drawFlight(progress,end) {
@@ -289,7 +293,7 @@
       shipDepth=dockIndex>=0?planetPosition(dockIndex).z:3;
       place(dockIndex>=0 ? dockingPosition(dockIndex) : target); docked = dockIndex;
       voyager.dataset.state=dockIndex>=0?'landed':'idle';
-      if (dockIndex>=0) voyager.style.setProperty('--heading','-12deg');
+      if (dockIndex>=0 && (paused||reduced.matches)) { shipHeading=-12; voyager.style.setProperty('--heading','-12deg'); }
       const memory = document.createElementNS('http://www.w3.org/2000/svg', 'path');
       memory.setAttribute('d', path); memories.append(memory);
       while (memories.children.length > 2) memories.firstElementChild.remove();
@@ -303,7 +307,7 @@
     }
     finishFlight = finish;
     if (paused || reduced.matches || !visible || !heroVisible) { finish(); return; }
-    const start = performance.now();
+    const start = performance.now(); let lastFlightFrame=start;
     function fly(now) {
       const progress = Math.min((now - start) / 1900, 1);
       const t = progress < .5 ? 4 * progress ** 3 : 1 - (-2 * progress + 2) ** 3 / 2;
@@ -313,7 +317,10 @@
       const behind=route(Math.max(0,t-.001),end), ahead=route(Math.min(1,t+.001),end);
       const dx=ahead[0]-behind[0], dy=behind[1]-ahead[1];
       const heading=Math.atan2(dx,-dy)*180/Math.PI;
-      voyager.style.setProperty('--heading',`${heading}deg`);
+      const settle=Math.max(0,(progress-.8)/.2), landingBlend=settle*settle*(3-2*settle);
+      const landingTurn=((-12-heading)%360+540)%360-180;
+      orientShip(heading+(dockIndex>=0?landingTurn*landingBlend:0),Math.min(50,now-lastFlightFrame));
+      lastFlightFrame=now;
       drawFlight(t,end);
       if (progress<1) flightId=requestAnimationFrame(fly); else finish();
     }
@@ -401,4 +408,6 @@
   if (cruise) cruise.hidden = false;
   system?.classList.add('is-interactive');
   resize(); syncMotion();
+  document.fonts?.ready.then(()=>{if(atLaunchPad)measureOrbit();});
+  hero?.querySelector('.space-intro')?.addEventListener('animationend',()=>{if(atLaunchPad)positionOnLaunchPad();});
 })();
