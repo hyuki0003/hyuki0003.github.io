@@ -1,0 +1,495 @@
+{
+  "profile": {
+    "name": "Dong-Hyuk Lee",
+    "initials": "dh.",
+    "role": "AI Researcher",
+    "organization": "Medical AI Co., Ltd.",
+    "department": "AI Group, R&D Dept.",
+    "organization_url": "https://www.medicalai.com/ko/",
+    "email": "hyuki0003@gmail.com",
+    "github_username": "hyuki0003",
+    "site_url": "https://hyuki0003.github.io",
+    "headline": "Learning representations.\nUnderstanding signals.",
+    "intro": "I work at the intersection of representation learning and physiological signals, designing contrastive and multimodal objectives to uncover meaningful structure in biosignals.",
+    "about": "I am an AI Researcher at Medical AI Co., Ltd. My research spans physiological signal analysis and multimodal learning, from remote heart rate estimation and conversational emotion recognition to ECG-based diagnosis and foundation models.",
+    "collaboration": "ECG AI, biosignal processing, and clinical deep learning.",
+    "updated": "September 2026",
+    "updated_iso": "2026-09-21",
+    "links": [
+      {
+        "label": "GitHub",
+        "url": "https://github.com/hyuki0003"
+      },
+      {
+        "label": "LinkedIn",
+        "url": "https://www.linkedin.com/in/dong-hyuk-lee-8542971b0/"
+      },
+      {
+        "label": "Notion",
+        "url": "https://www.notion.so/81ff1f23dd8441ba82bb77d9165426b7?source=copy_link"
+      },
+      {
+        "label": "Instagram",
+        "url": "https://www.instagram.com/hyuk_i2/"
+      }
+    ]
+  },
+  "research": [
+    {
+      "id": "01",
+      "title": "ECG-based diagnosis",
+      "description": "Multi-label cardiac abnormality detection and deep learning for disease screening.",
+      "label": "DIAGNOSIS",
+      "symbol": "grid"
+    },
+    {
+      "id": "02",
+      "title": "ECG foundation models",
+      "description": "Constructing and optimizing foundation models for electrocardiograms.",
+      "label": "FOUNDATION MODELS",
+      "symbol": "layers"
+    },
+    {
+      "id": "03",
+      "title": "Beyond the waveform",
+      "description": "Representation learning to explore hidden physiological states beyond the observed signal.",
+      "label": "REPRESENTATION LEARNING",
+      "symbol": "orbit"
+    }
+  ],
+  "keywords": [
+    "ECG Deep Learning",
+    "Cardiac Age Estimation",
+    "Biosignal Processing",
+    "Multimodal Learning",
+    "Contrastive Learning",
+    "eXplainable AI",
+    "Emotion Recognition"
+  ],
+  "publications": [
+    {
+      "id": "inter-dialog",
+      "category": "international",
+      "year": 2026,
+      "venue": "ICASSP",
+      "title": "Inter-Dialog Contrastive Learning for Multimodal Emotion Recognition in Conversations",
+      "authors": [
+        "D.-H. Lee",
+        "D. H. Kim",
+        "Y.-S. Choi"
+      ],
+      "status": "Conference paper",
+      "badges": [
+        "Oral presentation",
+        "First author"
+      ],
+      "tags": [
+        "Multimodal learning",
+        "Contrastive learning",
+        "Emotion recognition"
+      ],
+      "featured": true,
+      "art": "dialog",
+      "page": true,
+      "context": {
+        "Signal": "Conversation · Audio, text, and vision",
+        "Method": "Inter-Dialog contrastive learning",
+        "Application": "Emotion recognition in conversations"
+      },
+      "citation_type": "inproceedings",
+      "paper_url": "",
+      "code_url": ""
+    },
+    {
+      "id": "balanced-rppg",
+      "category": "international",
+      "year": 2025,
+      "venue": "ICEIC",
+      "title": "Remote Heart Rate Estimation From Facial Videos With Balanced Contrastive Learning",
+      "authors": [
+        "D.-H. Lee",
+        "D. H. Kim",
+        "Y.-S. Choi"
+      ],
+      "status": "Conference paper",
+      "badges": [
+        "First author"
+      ],
+      "tags": [
+        "Remote physiological sensing",
+        "Contrastive learning",
+        "rPPG"
+      ],
+      "featured": true,
+      "art": "video",
+      "page": true,
+      "context": {
+        "Signal": "Facial video",
+        "Method": "Balanced contrastive learning",
+        "Application": "Remote heart rate estimation · rPPG"
+      },
+      "citation_type": "inproceedings",
+      "paper_url": "",
+      "code_url": ""
+    },
+    {
+      "id": "global-local",
+      "category": "manuscript",
+      "year": 2026,
+      "venue": "IEEE JBHI",
+      "title": "Remote Heart Rate Estimation via Global-Local Contrastive Learning for Robust Physiological Measurement",
+      "authors": [
+        "D.-H. Lee",
+        "D. H. Kim",
+        "Y.-S. Choi"
+      ],
+      "status": "In progress",
+      "badges": [
+        "First author"
+      ],
+      "tags": [
+        "rPPG",
+        "Contrastive learning"
+      ],
+      "citation_type": "unpublished",
+      "paper_url": "",
+      "code_url": ""
+    },
+    {
+      "id": "cross-modal",
+      "category": "manuscript",
+      "year": 2026,
+      "venue": "IEEE ESWA",
+      "title": "Cross-Modal Alignment for Robust Multimodal Fusion in Conversational Emotion Recognition",
+      "authors": [
+        "D. H. Kim",
+        "D.-H. Lee",
+        "Y.-S. Choi"
+      ],
+      "status": "Under review",
+      "badges": [],
+      "tags": [
+        "Multimodal learning",
+        "Emotion recognition"
+      ],
+      "citation_type": "unpublished",
+      "paper_url": "",
+      "code_url": ""
+    },
+    {
+      "id": "wearable-physiomarkers",
+      "category": "manuscript",
+      "year": 2026,
+      "venue": "IEEE JBHI",
+      "title": "Identifying Wearable Multimodal Physiomarkers under Graded Alcohol Craving Level During VR Cue Elicitation",
+      "authors": [
+        "D. H. Kim",
+        "M. S. Lee",
+        "D.-H. Lee",
+        "J.-Y. Lee",
+        "Y.-S. Choi",
+        "et al."
+      ],
+      "status": "In progress",
+      "badges": [],
+      "tags": [
+        "Wearable biosignals",
+        "Multimodal learning"
+      ],
+      "citation_type": "unpublished",
+      "paper_url": "",
+      "code_url": ""
+    },
+    {
+      "id": "biomarker-correlation",
+      "category": "domestic",
+      "year": 2025,
+      "date": "2025.11",
+      "venue": "IEIE Autumn",
+      "title": "Correlation Analysis of Biomarkers using Multimodal Biosignals for Detecting Craving States in Patients with Substance Use Disorder",
+      "authors": [
+        "M. S. Lee",
+        "D. H. Kim",
+        "D.-H. Lee",
+        "J.-Y. Lee",
+        "Y.-S. Choi",
+        "et al."
+      ],
+      "status": "Conference paper",
+      "badges": [],
+      "tags": [
+        "Biosignals",
+        "Physiomarkers"
+      ],
+      "citation_type": "inproceedings",
+      "paper_url": "",
+      "code_url": ""
+    },
+    {
+      "id": "blood-flow-rppg",
+      "category": "domestic",
+      "year": 2025,
+      "date": "2025.06",
+      "venue": "IEIE Summer",
+      "title": "Remote Heart Rate Estimation with Blood Flow-Direction-Aware Spatio-Temporal Maps and Cross-Color Space Attention",
+      "authors": [
+        "D.-H. Lee",
+        "Y.-S. Choi"
+      ],
+      "status": "Conference paper",
+      "badges": [
+        "First author"
+      ],
+      "tags": [
+        "rPPG",
+        "Remote physiological sensing"
+      ],
+      "citation_type": "inproceedings",
+      "paper_url": "",
+      "code_url": ""
+    },
+    {
+      "id": "craving-heart-rate",
+      "category": "domestic",
+      "year": 2025,
+      "date": "2025.06",
+      "venue": "IEIE Summer",
+      "title": "A Study on the Exploration of Physiological Biomarkers for Classifying Alcohol Craving Levels Based on Heart Rate Responses",
+      "authors": [
+        "M. S. Lee",
+        "J.-Y. Lee",
+        "D.-H. Lee",
+        "D. H. Kim",
+        "Y.-S. Choi",
+        "et al."
+      ],
+      "status": "Conference paper",
+      "badges": [],
+      "tags": [
+        "Biosignals",
+        "Physiomarkers"
+      ],
+      "citation_type": "inproceedings",
+      "paper_url": "",
+      "code_url": ""
+    },
+    {
+      "id": "patch-shift",
+      "category": "domestic",
+      "year": 2024,
+      "date": "2024.06",
+      "venue": "IEIE Summer",
+      "title": "Contactless Heart Rate Estimation based on Patch Shift fused Video Vision Transformer",
+      "authors": [
+        "D.-H. Lee",
+        "Y.-S. Choi"
+      ],
+      "status": "Conference paper",
+      "badges": [
+        "First author"
+      ],
+      "tags": [
+        "rPPG",
+        "Vision Transformer"
+      ],
+      "citation_type": "inproceedings",
+      "paper_url": "",
+      "code_url": ""
+    },
+    {
+      "id": "senior-utterance",
+      "category": "domestic",
+      "year": 2024,
+      "date": "2024.05",
+      "venue": "KOSOMBE Spring",
+      "title": "Emotion Recognition based on Multimodal Graph Representation Learning of Senior Utterance",
+      "authors": [
+        "D. H. Kim",
+        "M. S. Lee",
+        "D.-H. Lee",
+        "C.-M. Kim",
+        "S. S. Park",
+        "J.H. Son",
+        "Y.-S. Choi",
+        "et al."
+      ],
+      "status": "Conference paper",
+      "badges": [
+        "Award"
+      ],
+      "tags": [
+        "Multimodal graph learning",
+        "Emotion recognition"
+      ],
+      "citation_type": "inproceedings",
+      "paper_url": "",
+      "code_url": ""
+    },
+    {
+      "id": "masters-thesis",
+      "category": "other",
+      "year": 2025,
+      "date": "2025.12",
+      "venue": "Kwangwoon University",
+      "title": "Inter-Dialog Contrastive Learning for Multimodal Emotion Recognition in Conversations",
+      "authors": [
+        "D.-H. Lee"
+      ],
+      "status": "M.S. thesis",
+      "badges": [],
+      "tags": [
+        "Multimodal learning",
+        "Emotion recognition"
+      ],
+      "citation_type": "mastersthesis",
+      "paper_url": "",
+      "code_url": ""
+    },
+    {
+      "id": "rppg-patent",
+      "category": "other",
+      "year": 2025,
+      "date": "2025.09",
+      "venue": "Patent application",
+      "title": "생리학적 혈류 방향 기반 시공간 특징맵과 교차 주의 집중을 이용한 비접촉 원격 심박수 추정 시스템",
+      "authors": [
+        "Y.-S. Choi",
+        "D.-H. Lee"
+      ],
+      "status": "Patent filed",
+      "badges": [],
+      "tags": [
+        "rPPG",
+        "Patent"
+      ],
+      "application_number": "10-2025-0123545",
+      "citation_type": "misc",
+      "paper_url": "",
+      "code_url": ""
+    }
+  ],
+  "career": [
+    {
+      "period": "2026.04 — Present",
+      "position": "AI Researcher",
+      "organization": "Medical AI Co., Ltd.",
+      "url": "https://www.medicalai.com/ko/",
+      "detail": "AI Group, R&D Dept.",
+      "description": "ECG foundation models · Multi-label disease classification · Representation learning"
+    },
+    {
+      "period": "2024.03 — 2026.02",
+      "position": "Graduate Researcher",
+      "organization": "Kwangwoon University · NeuroAI Lab.",
+      "url": "https://sites.google.com/view/neuroailab/home",
+      "detail": "Advisor: Prof. Young-Seok Choi",
+      "description": "Multimodal emotion recognition · Remote physiological sensing (rPPG)"
+    }
+  ],
+  "education": [
+    {
+      "degree": "M.S.",
+      "field": "Electronics and Communication Engineering",
+      "institution": "Kwangwoon University",
+      "detail": "Advisor: Prof. Young-Seok Choi"
+    },
+    {
+      "degree": "B.S.",
+      "field": "Computer Software Engineering",
+      "institution": "Hansung University",
+      "detail": ""
+    },
+    {
+      "degree": "B.S.",
+      "field": "IT Convergence Engineering",
+      "institution": "Hansung University",
+      "detail": ""
+    }
+  ],
+  "news": [
+    {
+      "date": "2026.08",
+      "label": "MANUSCRIPT",
+      "text": "Cross-Modal Alignment for Robust Multimodal Fusion in Conversational Emotion Recognition has been submitted to EWSA and is under review."
+    },
+    {
+      "date": "2026.04",
+      "label": "CAREER",
+      "text": "Joined Medical AI Co., Ltd. as an AI Researcher, working on ECG deep learning."
+    },
+    {
+      "date": "2026.03",
+      "label": "CONFERENCE",
+      "text": "Inter-Dialog Contrastive Learning selected for an oral presentation at ICASSP 2026."
+    },
+    {
+      "date": "2026.02",
+      "label": "EDUCATION",
+      "text": "Graduated from NeuroAI Lab., Kwangwoon University."
+    },
+    {
+      "date": "2026.01",
+      "label": "CONFERENCE",
+      "text": "Inter-Dialog Contrastive Learning accepted to ICASSP 2026."
+    },
+    {
+      "date": "2025.09",
+      "label": "PATENT",
+      "text": "Patent filed for remote heart rate estimation with blood-flow-direction-aware spatio-temporal maps."
+    },
+    {
+      "date": "2024.05",
+      "label": "AWARD",
+      "text": "Received the Best Poster Award at KOSOMBE 2024."
+    },
+    {
+      "date": "2024.03",
+      "label": "CAREER",
+      "text": "Joined NeuroAI Lab., Kwangwoon University."
+    }
+  ],
+  "stack": [
+    {
+      "category": "Languages",
+      "items": [
+        "Python",
+        "C",
+        "LaTeX"
+      ]
+    },
+    {
+      "category": "Deep learning",
+      "items": [
+        "PyTorch",
+        "TensorFlow",
+        "scikit-learn"
+      ]
+    },
+    {
+      "category": "Data & vision",
+      "items": [
+        "NumPy",
+        "Pandas",
+        "OpenCV"
+      ]
+    },
+    {
+      "category": "MLOps & infrastructure",
+      "items": [
+        "Ray",
+        "MLflow",
+        "Jupyter"
+      ]
+    },
+    {
+      "category": "Environment",
+      "items": [
+        "Ubuntu",
+        "Windows",
+        "Git",
+        "VS Code",
+        "MySQL"
+      ]
+    }
+  ]
+}
