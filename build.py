@@ -216,7 +216,7 @@ def destinations(data: dict) -> dict:
     profile = data['profile']
     sections = research_and_cv(data)
     introduction = destination_heading('01 / INTRODUCTION', 'Across signals.<br><em>Beyond boundaries.</em>', profile['role'])
-    introduction += f'<section class="introduction-copy container"><div><p class="eyebrow">DONG-HYUK LEE</p><h2>Learning representations.<br><em>Understanding signals.</em></h2></div><div><p>{esc(profile["about"])}</p><p>{esc(profile["intro"])}</p><div class="destination-actions"><a class="button primary" href="research.html">Explore research {icon("arrow")}</a><a class="text-link" href="cv.html">View CV {icon("external")}</a></div></div></section>'
+    introduction += f'<section class="introduction-copy container"><div><p class="eyebrow">DONG-HYUK LEE</p><h2>Learning representations.<br><em>Understanding signals.</em></h2></div><div><p>{esc(profile["about"])}</p><div class="destination-actions"><a class="button primary" href="research.html">Explore research {icon("arrow")}</a><a class="text-link" href="cv.html">View CV {icon("external")}</a></div></div></section>'
     cv = destination_heading('02 / CV', 'Curriculum <em>vitae.</em>', 'Experience, education, and the tools behind my research.', portrait=True)
     cv += sections['cv'].replace('04 / BACKGROUND', 'ACADEMIC &amp; PROFESSIONAL BACKGROUND').replace('A little <em>about me.</em>', 'Experience &amp; <em>education.</em>')
     research = destination_heading('04 / RESEARCH', 'A shared <em>latent space.</em>', 'Contrastive learning, multimodal foundation models, and representations that generalize across domains.') + sections['research']
