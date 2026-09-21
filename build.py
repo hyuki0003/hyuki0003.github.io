@@ -158,7 +158,7 @@ def page(title: str, body: str, data: dict, prefix: str = '', active: str = '', 
         template = template.replace('{{' + key + '}}', value)
     template = template.replace('</head>', f'<link rel="stylesheet" href="{prefix}assets/universe.css">\n<script src="{prefix}assets/universe.js" defer></script>\n<script>document.documentElement.dataset.theme="dark"</script>\n</head>')
     template = template.replace('<body id="top">', '<body id="top" class="universe-site' + (' universe-home' if not canonical_path else '') + '">')
-    template = template.replace('<span class="brand-name">Dong-Hyuk Lee<span>AI RESEARCHER</span></span>', '<span class="brand-name">Latent<span>BY DONG-HYUK LEE</span></span>')
+    template = template.replace('<span class="brand-name">Dong-Hyuk Lee<span>AI RESEARCHER</span></span>', '<span class="brand-name">Dong-Hyuk Lee<span>HYUKI0003.GITHUB.IO</span></span>')
     template = template.replace('<div class="header-controls">', '<div class="header-controls"><button class="space-motion" type="button" aria-label="Pause space motion" aria-pressed="false" hidden>Ⅱ</button>')
     template = template.replace('<meta name="theme-color" content="#f6f5f1">', '<meta name="theme-color" content="#050b10">')
     if not canonical_path:
@@ -285,7 +285,7 @@ def main() -> None:
     except (OSError, json.JSONDecodeError, ValueError, KeyError, TypeError) as exc:
         raise SystemExit(f'Cannot build website: {exc}') from exc
     p = data['profile']
-    (ROOT/'index.html').write_text(page(f"Latent — {p['name']}",home(data),data,full_footer=False),encoding='utf-8')
+    (ROOT/'index.html').write_text(page(f"{p['name']} — AI Researcher",home(data),data,full_footer=False),encoding='utf-8')
     for name, body in destinations(data).items():
         title = 'CV' if name == 'cv' else name.title()
         (ROOT/(name+'.html')).write_text(page(f"{title} — {p['name']}", '<main id="main" class="destination-page">'+body+'</main>', data, active=name, canonical_path=name+'.html', full_footer=False), encoding='utf-8')
