@@ -3,11 +3,13 @@
   'use strict';
   const hero = document.querySelector('.space-hero');
   const motion = document.querySelector('.space-motion');
+  const previousSections = {'#research':'research.html', '#selected-work':'research.html#selected-work', '#background':'cv.html#background', '#contact':'contact.html#contact'};
+  if (hero && previousSections[location.hash]) location.replace(previousSections[location.hash]);
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
   const coarse = window.matchMedia('(pointer: coarse)');
   let paused = reduced.matches;
   let frameId = 0;
-  let previous = 0;
+  let previous = 0, lastPaint = 0;
   let visible = !document.hidden;
   let heroVisible = true;
   let camera = { x: 0, y: 0 };
@@ -47,18 +49,21 @@
   }
   function render(now) {
     if (paused || !visible) { frameId = 0; return; }
-    if (now - previous > 32) {
-      const delta = Math.min(now - previous, 64); previous = now;
-      camera.x += (pointer.x - camera.x) * .06;
-      camera.y += (pointer.y - camera.y) * .06;
-      if (hero && heroVisible) {
-        sceneTime += delta / 1000;
-        planetRenderer?.draw(sceneTime);
-        updateOrbit(delta);
-        hero.style.setProperty('--camera-x', `${camera.x}px`);
-        hero.style.setProperty('--camera-y', `${camera.y}px`);
-      }
-      paint(delta);
+    const delta = Math.min(now - previous, 50); previous = now;
+    const smoothing = 1 - Math.exp(-delta / 240);
+    camera.x += (pointer.x - camera.x) * smoothing;
+    camera.y += (pointer.y - camera.y) * smoothing;
+    if (hero && heroVisible) {
+      sceneTime += delta / 1000;
+      // Orbital controls run every display frame, independently of the GPU budget.
+      updateOrbit(delta);
+      hero.style.setProperty('--camera-x', `${camera.x}px`);
+      hero.style.setProperty('--camera-y', `${camera.y}px`);
+    }
+    if (now - lastPaint >= 32) {
+      const paintDelta = Math.min(now-lastPaint,64); lastPaint=now;
+      if (hero && heroVisible) planetRenderer?.draw(sceneTime);
+      paint(paintDelta);
     }
     frameId = requestAnimationFrame(render);
   }
@@ -85,6 +90,7 @@
 
   const system = hero?.querySelector('.space-system');
   const worlds = system ? [...system.querySelectorAll('.space-world')] : [];
+  const globes = worlds.map(world => world.querySelector('.world-globe'));
   const voyager = system?.querySelector('.space-voyager');
   const trail = system?.querySelector('.space-flight');
   const memories = system?.querySelector('.space-memories');
@@ -98,23 +104,24 @@
   let automatic = false, finishFlight = null;
   let orbitTime = 0, docked = -1, hoveredWorld = false, hoveredConsole = false;
   let orbitLayout = null, consoleSize = { width: 260, height: 210 }, positioned = false;
-  const phases = [Math.PI * 1.22, Math.PI * 1.72, Math.PI * .22, Math.PI * .72];
+  const phases = worlds.map((_, index) => Math.PI * 1.15 + index * Math.PI * 2 / worlds.length);
   const descriptions = {
-    ecg: ['ECG', 'Heart signals, diagnosis, and ECG foundation models.', 'Explore ECG research'],
-    vision: ['Vision', 'Finding physiological signals in facial video.', 'Explore vision research'],
-    emotion: ['Emotion Recognition', 'Connecting language, speech, and visual cues to understand emotion.', 'Explore emotion recognition'],
-    wearables: ['Wearables', 'Multimodal physiological markers from wearable biosignals.', 'Explore wearable research']
+    introduction: ['Introduction', 'Meet the researcher exploring connections across signals.', 'Meet Dong-Hyuk Lee'],
+    cv: ['CV', 'Experience, education, and the tools behind the research.', 'View curriculum vitae'],
+    publications: ['Publication', 'Papers, manuscripts, and ideas at every stage.', 'Browse publications'],
+    research: ['Research', 'Representation learning, multimodal data, and physiological signals.', 'Explore research'],
+    contact: ['Contact', 'Start a conversation about research and collaboration.', 'Get in touch']
   };
   function measureOrbit() {
     if (!system) return;
     const rect = system.getBoundingClientRect();
     orbitLayout = { width: rect.width, height: rect.height,
-      radius: worlds.map(world => world.querySelector('.world-globe').getBoundingClientRect().width / 2) };
+      radius: globes.map(globe => globe.offsetWidth / 2) };
     if (!positioned) {
       place({ x: window.innerWidth <= 800 ? 180 : 545, y: 690 * .76 }); positioned = true;
     }
     if (consolePanel && !consolePanel.hidden) measureConsole();
-    updateOrbit(0);
+    updateOrbit(0); drawOrbitTrack();
     if (finishFlight) finishFlight();
   }
   function planetPosition(index) {
@@ -134,12 +141,16 @@
     if (!hoveredWorld && !hoveredConsole && !focusedControl && !finishFlight && docked < 0) orbitTime += delta * .000055;
     worlds.forEach((world, index) => {
       const point = planetPosition(index), x = point.x / 1000 * orbitLayout.width;
-      world.style.left = `${point.x / 10}%`; world.style.top = `${point.y / 7}%`;
+      world.style.left = '0px'; world.style.top = '0px';
+      world.style.transform = `translate3d(${x}px,${point.y/700*orbitLayout.height}px,0) translate(-50%,-50%)`;
       world.style.setProperty('--caption-x', `${Math.max(62, Math.min(orbitLayout.width-62,x))-x}px`);
-      world.querySelector('.world-globe').style.transform = `scale(${point.scale})`;
+      globes[index].style.transform = `scale(${point.scale})`;
       world.classList.toggle('is-occluded', point.occluded && index !== docked);
       world.style.zIndex = point.z > 0 ? '4' : '2';
     });
+    if (docked >= 0 && !finishFlight) { place(dockingPosition(docked)); positionConsole(); }
+  }
+  function drawOrbitTrack() {
     const route = system.querySelector('.space-orbit-track');
     if (planetRenderer && route) {
       let path = '', pen = false;
@@ -151,7 +162,6 @@
       }
       route.setAttribute('d',path);
     }
-    if (docked >= 0 && !finishFlight) { place(dockingPosition(docked)); positionConsole(); }
   }
   function place(point) {
     position = point;
@@ -274,7 +284,7 @@
     const rect=system.getBoundingClientRect();
     travel({x:Math.max(35,Math.min(965,(event.clientX-rect.left)/rect.width*1000)),y:Math.max(30,Math.min(660,(event.clientY-rect.top)/rect.height*700))});
     hero.querySelector('.space-destination').textContent='DH–01 / FREE FLIGHT';
-    hero.querySelector('.space-description').textContent='Following curiosity across the latent universe. Select a world to land.';
+    hero.querySelector('.space-description').textContent='Following curiosity across the latent universe. Choose a section to explore.';
     hero.querySelector('.space-related').hidden=true;
     announcement.textContent='Flying to a new position.';
   });

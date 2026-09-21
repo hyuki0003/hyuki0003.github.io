@@ -9,9 +9,9 @@ window.createLatentPlanet = function createLatentPlanet(hero) {
   const normalize = v => { const length = Math.hypot(...v); return v.map(n => n / length); };
   const cross = (a, b) => [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];
   let scene, lastTime = 0, ready = false, textureReady = false;
-  let program, locations, texture;
+  let program, locations, texture, ringTexture;
   function updateScene(seconds) {
-    const normal = normalize([-.35 + .008*Math.sin(seconds*.055), .84, .415 + .008*Math.sin(seconds*.04)]);
+    const normal = normalize([-.35, .84, .50]);
     scene.normal = normal;
     scene.axis = normalize([normal[1], -normal[0], 0]);
     scene.other = cross(normal, scene.axis);
@@ -29,18 +29,12 @@ window.createLatentPlanet = function createLatentPlanet(hero) {
     uniform vec2 resolution, center;
     uniform float pixelsPerUnit, clock, hasTexture;
     uniform vec3 ringNormal, ringAxis, ringOther;
-    uniform sampler2D clouds;
+    uniform sampler2D clouds, ringProfile;
     const float PI=3.14159265359;
     float hash(float x){return fract(sin(x*127.1)*43758.5453);}
     float noise(float x){float i=floor(x),f=fract(x);return mix(hash(i),hash(i+1.),f*f*(3.-2.*f));}
     float ringDensity(float radius){
-      float radial=.32+.25*noise(radius*53.)+.20*noise(radius*137.)+.15*noise(radius*389.);
-      float aa=1./pixelsPerUnit;
-      radial+=.12*sin(radius*740.)*clamp(1.-aa*170.,0.,1.);
-      radial*=smoothstep(1.28,1.33,radius)*(1.-smoothstep(2.31,2.42,radius));
-      radial*=1.-.94*exp(-pow((radius-1.96)*52.,2.));
-      radial*=1.-.65*exp(-pow((radius-2.27)*85.,2.));
-      return radial;
+      return texture2D(ringProfile,vec2(clamp((radius-1.28)/1.14,0.,1.),.5)).a;
     }
     vec3 tonemap(vec3 x){return clamp((x*(2.51*x+.03))/(x*(2.43*x+.59)+.14),0.,1.);}
     void main(){
@@ -52,7 +46,12 @@ window.createLatentPlanet = function createLatentPlanet(hero) {
         front=sqrt(1.-disk);vec3 n=vec3(p,front);
         float latitude=asin(clamp(dot(n,ringNormal),-1.,1.));
         float longitude=atan(dot(n,ringOther),dot(n,ringAxis));
-        vec2 uv=vec2(fract(longitude/(2.*PI)+.5+clock*.004),latitude/PI+.5);
+        // Differential winds shear cloud bands while small eddies evolve locally.
+        float wind=.0105+.0035*sin(latitude*8.);
+        float drift=clock*wind;
+        float eddy=.004*sin(longitude*11.-clock*.19)*cos(latitude*17.+clock*.07);
+        vec2 uv=vec2(fract(longitude/(2.*PI)+.5+drift+eddy),latitude/PI+.5);
+        uv.y+=.0025*sin(longitude*9.+clock*.12)*cos(latitude*13.-clock*.06);
         vec3 tex=mix(texture2D(clouds,vec2(fract(uv.x+.5),uv.y)).rgb,texture2D(clouds,uv).rgb,smoothstep(0.,.08,min(uv.x,1.-uv.x)));
         float fallback=.5+.2*sin(latitude*47.+noise(longitude*8.)*.8);
         tex=mix(mix(vec3(.12,.25,.28),vec3(.52,.61,.59),fallback),tex,hasTexture);
@@ -71,14 +70,15 @@ window.createLatentPlanet = function createLatentPlanet(hero) {
       vec3 ringPoint=vec3(p,z);float radius=length(ringPoint);
       if(radius>1.28&&radius<2.42&&(disk>=1.||z>front)){
         float angle=atan(dot(ringPoint,ringOther),dot(ringPoint,ringAxis));
-        float dust=.94+.06*sin(angle*93.-clock*.22+radius*130.);
+        float dust=.94+.06*noise(angle*160.+radius*730.-clock*.18);
         float density=ringDensity(radius)*dust;
+        density*=smoothstep(1.28,1.28+pixel*3.,radius)*(1.-smoothstep(2.42-pixel*3.,2.42,radius));
         float b=dot(ringPoint,light),c=dot(ringPoint,ringPoint)-1.;
-        float shadow=(b<0.&&b*b>c)? .11:1.;
-        float band=noise(radius*95.)*.5+noise(radius*32.)*.5;
-        vec3 ice=mix(vec3(.24,.32,.34),vec3(.63,.58,.47),band);
-        vec3 ringColor=pow(ice,vec3(2.2))*(.65+.55*abs(dot(ringNormal,light)))*shadow;
-        ringColor+=vec3(.035,.08,.085)*pow(max(0.,sin(angle*157.-clock*.5+radius*531.)),28.)*shadow;
+        float penumbra=smoothstep(.95,1.05,sqrt(max(0.,dot(ringPoint,ringPoint)-b*b)));
+        float shadow=b<0.?mix(.08,1.,penumbra):1.;
+        vec3 ice=texture2D(ringProfile,vec2((radius-1.28)/1.14,.5)).rgb;
+        vec3 ringColor=pow(ice,vec3(2.2))*(.70+.48*abs(dot(ringNormal,light)))*shadow;
+        ringColor+=vec3(.018,.04,.045)*pow(max(0.,sin(angle*157.-clock*.5+radius*531.)),28.)*shadow;
         float a=density*.9;
         color=(ringColor*a+color*alpha*(1.-a))/max(.001,a+alpha*(1.-a));alpha=a+alpha*(1.-a);
       }
@@ -98,7 +98,7 @@ window.createLatentPlanet = function createLatentPlanet(hero) {
   const cloudImage = new Image();
   function uploadTexture() {
     if(!ready||!cloudImage.complete||!cloudImage.naturalWidth)return;
-    gl.bindTexture(gl.TEXTURE_2D,texture);gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,true);
+    gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,texture);gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,true);
     gl.texImage2D(gl.TEXTURE_2D,0,gl.RGB,gl.RGB,gl.UNSIGNED_BYTE,cloudImage);
     gl.generateMipmap(gl.TEXTURE_2D);textureReady=true;
     canvas.dataset.texture='loaded';draw(lastTime);
@@ -114,13 +114,38 @@ window.createLatentPlanet = function createLatentPlanet(hero) {
       const buffer=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buffer);
       gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,3,-1,-1,3]),gl.STATIC_DRAW);
       const position=gl.getAttribLocation(program,'position');gl.enableVertexAttribArray(position);gl.vertexAttribPointer(position,2,gl.FLOAT,false,0,0);
-      locations=Object.fromEntries(['resolution','center','pixelsPerUnit','clock','hasTexture','ringNormal','ringAxis','ringOther','clouds'].map(name=>[name,gl.getUniformLocation(program,name)]));
+      locations=Object.fromEntries(['resolution','center','pixelsPerUnit','clock','hasTexture','ringNormal','ringAxis','ringOther','clouds','ringProfile'].map(name=>[name,gl.getUniformLocation(program,name)]));
       texture=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,texture);
       gl.texImage2D(gl.TEXTURE_2D,0,gl.RGB,1,1,0,gl.RGB,gl.UNSIGNED_BYTE,new Uint8Array([80,110,115]));
       gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.REPEAT);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
       gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);gl.generateMipmap(gl.TEXTURE_2D);
       const anisotropic=gl.getExtension('EXT_texture_filter_anisotropic');
       if(anisotropic)gl.texParameterf(gl.TEXTURE_2D,anisotropic.TEXTURE_MAX_ANISOTROPY_EXT,Math.min(8,gl.getParameter(anisotropic.MAX_TEXTURE_MAX_ANISOTROPY_EXT)));
+      // A mipmapped radial optical-depth map keeps narrow ring bands free of shimmer.
+      ringTexture=gl.createTexture();gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,ringTexture);
+      const ringPixels=new Uint8Array(4096*4);
+      const fract=n=>n-Math.floor(n), hash=n=>fract(Math.sin(n*127.1+71.7)*43758.5453);
+      const smooth=(a,b,x)=>{const t=Math.max(0,Math.min(1,(x-a)/(b-a)));return t*t*(3-2*t);};
+      const noise=x=>{const i=Math.floor(x),f=fract(x);return hash(i)+(hash(i+1)-hash(i))*f*f*(3-2*f);};
+      for(let i=0;i<4096;i++){
+        const r=1.28+i/4095*1.14;
+        const detail=.40*noise(r*71)+.24*noise(r*233)+.17*noise(r*701)+.09*noise(r*1709);
+        const fine=.5+.5*Math.sin(r*911+noise(r*53)*7);
+        let density=(.32+detail*.52+fine*.08)*smooth(1.28,1.33,r)*(1-smooth(2.37,2.42,r));
+        density*=.30+.70*smooth(1.48,1.62,r);
+        density*=1-.98*Math.exp(-Math.pow((r-1.96)*52,2));
+        density*=1-.72*Math.exp(-Math.pow((r-2.27)*100,2));
+        density*=1-.33*Math.exp(-Math.pow((r-2.13)*130,2));
+        const warmth=noise(r*17), value=.43+detail*.25+fine*.035;
+        ringPixels[i*4]=Math.round(255*value*(.91+.06*warmth));
+        ringPixels[i*4+1]=Math.round(255*value*(.93-.04*warmth));
+        ringPixels[i*4+2]=Math.round(255*value*(.88-.11*warmth));
+        ringPixels[i*4+3]=Math.round(255*Math.min(1,density));
+      }
+      gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,4096,1,0,gl.RGBA,gl.UNSIGNED_BYTE,ringPixels);
+      gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);gl.generateMipmap(gl.TEXTURE_2D);
+      gl.activeTexture(gl.TEXTURE0);
       ready=true;textureReady=false;uploadTexture();resize();
       hero.classList.add('has-live-planet');canvas.dataset.renderer='webgl';
     }catch(error){ready=false;canvas.dataset.renderer='fallback';hero.classList.remove('has-live-planet');console.warn('Using the static Latent planet.',error.message);}
@@ -134,7 +159,8 @@ window.createLatentPlanet = function createLatentPlanet(hero) {
     gl.uniform1f(locations.clock,seconds);gl.uniform1f(locations.hasTexture,textureReady?1:0);
     gl.uniform3fv(locations.ringNormal,scene.normal);gl.uniform3fv(locations.ringAxis,scene.axis);gl.uniform3fv(locations.ringOther,scene.other);
     gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,texture);gl.uniform1i(locations.clouds,0);
-    gl.drawArrays(gl.TRIANGLES,0,3);
+    gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,ringTexture);gl.uniform1i(locations.ringProfile,1);
+    gl.activeTexture(gl.TEXTURE0);gl.drawArrays(gl.TRIANGLES,0,3);
   }
   function resize() {
     const bounds=surface.getBoundingClientRect(),compact=window.innerWidth<=800;

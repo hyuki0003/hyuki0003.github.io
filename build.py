@@ -122,8 +122,8 @@ def header(prefix: str, active: str = '') -> str:
     <header class="site-header"><div class="container header-inner">
       <a class="brand" href="{prefix}index.html" aria-label="Dong-Hyuk Lee — home"><span class="monogram">dh<span>.</span></span><span class="brand-name">Dong-Hyuk Lee<span>AI RESEARCHER</span></span></a>
       <nav id="site-nav" class="site-nav" aria-label="Main navigation">
-        {nav('index.html#research','Research','research')}{nav('publications.html','Publications','publications')}{nav('index.html#background','Background','background')}
-        <a class="nav-contact" href="{prefix}index.html#contact">Get in touch {icon('external')}</a>
+        {nav('introduction.html','Introduction','introduction')}{nav('cv.html','CV','cv')}{nav('publications.html','Publication','publications')}{nav('research.html','Research','research')}
+        <a class="nav-contact" href="{prefix}contact.html">Get in touch {icon('external')}</a>
       </nav>
       <div class="header-controls"><button class="icon-button theme-toggle js-only" type="button" aria-label="Switch to dark theme" title="Switch theme">{icon('moon','moon-icon')}{icon('sun','sun-icon')}</button>
       <button class="icon-button menu-toggle js-only" type="button" aria-label="Open navigation" aria-controls="site-nav" aria-expanded="false">{icon('menu','menu-icon')}{icon('close','close-icon')}</button></div>
@@ -171,7 +171,7 @@ def page(title: str, body: str, data: dict, prefix: str = '', active: str = '', 
     return template
 
 
-def home(data: dict) -> str:
+def research_and_cv(data: dict) -> dict:
     p = data['profile']
     statement_lines = []
     for line in p['headline'].splitlines():
@@ -193,13 +193,34 @@ def home(data: dict) -> str:
     education = ''.join(f'''<article class="education-item"><span class="degree">{esc(e['degree'])}</span><div><h4>{esc(e['field'])}</h4><p>{esc(e['institution'])}</p>{f'<p class="education-detail">{esc(e["detail"])}</p>' if e['detail'] else ''}</div></article>''' for e in data['education'])
     stack = ''.join(f'<div class="stack-row"><span>{esc(s["category"])}</span><p>{" · ".join(esc(x) for x in s["items"])}</p></div>' for s in data['stack'])
     keywords = ''.join(f'<span>{esc(t)}</span>' for t in data['keywords'])
-    return f'''<main id="main">
-      {(ROOT/'templates/universe.html').read_text(encoding='utf-8').replace('PROFILE_INTRO', esc(p['intro']))}
-      <section class="section research-section" id="research" aria-labelledby="research-title"><div class="container"><div class="section-heading"><div><span class="eyebrow section-index">01 / RESEARCH</span><h2 id="research-title">A common thread.<br><em>Across different signals.</em></h2></div><p>From facial videos and conversations<br class="desktop-break"> to wearable biosignals and ECGs.</p></div><div class="research-grid">{research}</div><div class="keyword-strip">{keywords}</div></div></section>
-      <section class="section selected-section container" id="selected-work" aria-labelledby="work-title"><div class="section-heading"><div><span class="eyebrow section-index">02 / SELECTED WORK</span><h2 id="work-title">Ideas into <em>research.</em></h2></div><a class="text-link" href="publications.html">All publications {icon('arrow')}</a></div><div class="works-grid">{''.join(works)}</div><a class="archive-note" href="publications.html#manuscript"><span class="archive-dot"></span><span>Also exploring global-local contrastive learning, cross-modal alignment, and wearable physiomarkers.</span>{icon('arrow')}</a></section>
+    return {'research': f'''      <section class="section research-section" id="research" aria-labelledby="research-title"><div class="container"><div class="section-heading"><div><span class="eyebrow section-index">01 / RESEARCH</span><h2 id="research-title">A common thread.<br><em>Across different signals.</em></h2></div><p>From facial videos and conversations<br class="desktop-break"> to wearable biosignals and ECGs.</p></div><div class="research-grid">{research}</div><div class="keyword-strip">{keywords}</div></div></section>
+      <section class="section selected-section container" id="selected-work" aria-labelledby="work-title"><div class="section-heading"><div><span class="eyebrow section-index">02 / SELECTED WORK</span><h2 id="work-title">Ideas into <em>research.</em></h2></div><a class="text-link" href="publications.html">All publications {icon('arrow')}</a></div><div class="works-grid">{''.join(works)}</div><a class="archive-note" href="publications.html#group-manuscript"><span class="archive-dot"></span><span>Also exploring global-local contrastive learning, cross-modal alignment, and wearable physiomarkers.</span>{icon('arrow')}</a></section>
       <section class="section news-section" aria-labelledby="news-title"><div class="container split-section"><div class="section-intro"><span class="eyebrow section-index">03 / LATEST</span><h2 id="news-title">Along<br><em>the way.</em></h2><p>Research updates &amp; milestones.</p></div><div class="news-list-wrap"><ol class="news-list">{news}</ol><details class="older-news"><summary>Earlier updates {icon('down')}</summary><ol class="news-list">{older}</ol></details></div></div></section>
-      <section class="section background-section container" id="background" aria-labelledby="background-title"><div class="section-heading"><div><span class="eyebrow section-index">04 / BACKGROUND</span><h2 id="background-title">A little <em>about me.</em></h2></div></div><p class="about-copy">{esc(p['about'])}</p><div class="background-grid"><div><h3 class="subheading">Experience</h3><div class="career-list">{career}</div></div><div><h3 class="subheading">Education</h3><div class="education-list">{education}</div></div></div><details class="toolkit"><summary><span>Tools I work with</span><span class="toolkit-preview">Python · PyTorch · Ray · MLflow</span>{icon('down')}</summary><div class="stack-list">{stack}</div></details></section>
-    </main>'''
+''', 'cv': f'''      <section class="section background-section container" id="background" aria-labelledby="background-title"><div class="section-heading"><div><span class="eyebrow section-index">04 / BACKGROUND</span><h2 id="background-title">A little <em>about me.</em></h2></div></div><p class="about-copy">{esc(p['about'])}</p><div class="background-grid"><div><h3 class="subheading">Experience</h3><div class="career-list">{career}</div></div><div><h3 class="subheading">Education</h3><div class="education-list">{education}</div></div></div><details class="toolkit"><summary><span>Tools I work with</span><span class="toolkit-preview">Python · PyTorch · Ray · MLflow</span>{icon('down')}</summary><div class="stack-list">{stack}</div></details></section>
+'''}
+
+
+
+def home(data: dict) -> str:
+    universe = (ROOT/'templates/universe.html').read_text(encoding='utf-8')
+    return '<main id="main">' + universe.replace('PROFILE_INTRO', esc(data['profile']['intro'])) + '</main>'
+
+
+def destination_heading(label: str, title: str, description: str) -> str:
+    return f'<header class="destination-heading container"><a class="breadcrumb" href="index.html">{icon("back")} Back to the orbit</a><p class="eyebrow section-index">{esc(label)}</p><h1>{title}</h1><p class="destination-lead">{esc(description)}</p></header>'
+
+
+def destinations(data: dict) -> dict:
+    profile = data['profile']
+    sections = research_and_cv(data)
+    introduction = destination_heading('01 / INTRODUCTION', 'Across signals.<br><em>Beyond boundaries.</em>', profile['role'])
+    introduction += f'<section class="introduction-copy container"><div><p class="eyebrow">DONG-HYUK LEE</p><h2>Learning representations.<br><em>Understanding signals.</em></h2></div><div><p>{esc(profile["about"])}</p><p>{esc(profile["intro"])}</p><div class="destination-actions"><a class="button primary" href="research.html">Explore research {icon("arrow")}</a><a class="text-link" href="cv.html">View CV {icon("external")}</a></div></div></section>'
+    cv = destination_heading('02 / CV', 'Curriculum <em>vitae.</em>', 'Experience, education, and the tools behind my research.')
+    cv += sections['cv'].replace('04 / BACKGROUND', 'ACADEMIC &amp; PROFESSIONAL BACKGROUND').replace('A little <em>about me.</em>', 'Experience &amp; <em>education.</em>')
+    research = destination_heading('04 / RESEARCH', 'A shared <em>latent space.</em>', 'Representation learning across physiological signals and multimodal data.') + sections['research']
+    contact = destination_heading('05 / CONTACT', 'Let’s <em>connect.</em>', 'Open to research collaboration and thoughtful conversations.')
+    contact += footer(profile, '', full=True).split('<footer class="site-footer">')[0]
+    return {'introduction': introduction, 'cv': cv, 'research': research, 'contact': contact}
 
 
 def publication_record(paper: dict) -> str:
@@ -264,7 +285,10 @@ def main() -> None:
     except (OSError, json.JSONDecodeError, ValueError, KeyError, TypeError) as exc:
         raise SystemExit(f'Cannot build website: {exc}') from exc
     p = data['profile']
-    (ROOT/'index.html').write_text(page(f"Latent — {p['name']}",home(data),data),encoding='utf-8')
+    (ROOT/'index.html').write_text(page(f"Latent — {p['name']}",home(data),data,full_footer=False),encoding='utf-8')
+    for name, body in destinations(data).items():
+        title = 'CV' if name == 'cv' else name.title()
+        (ROOT/(name+'.html')).write_text(page(f"{title} — {p['name']}", '<main id="main" class="destination-page">'+body+'</main>', data, active=name, canonical_path=name+'.html', full_footer=False), encoding='utf-8')
     (ROOT/'publications.html').write_text(page(f"Publications — {p['name']}",publications(data),data,active='publications',canonical_path='publications.html',full_footer=False),encoding='utf-8')
     project_dir=ROOT/'projects'
     project_dir.mkdir(exist_ok=True)
@@ -277,11 +301,11 @@ def main() -> None:
     # Local JS data avoids fetch/CORS restrictions when opening index.html directly.
     citations={item['id']:{'title':item['title'],'bibtex':bibtex(item)} for item in data['publications']}
     (ROOT/'assets/citations.js').write_text('"use strict";\nwindow.PROFILE_CITATIONS = '+json.dumps(citations,ensure_ascii=False,indent=2).replace('</','<\\/')+';\n',encoding='utf-8')
-    paths=['','publications.html']+[f"projects/{p['id']}.html" for p in data['publications'] if p.get('page')]
+    paths=['','introduction.html','cv.html','publications.html','research.html','contact.html']+[f"projects/{p['id']}.html" for p in data['publications'] if p.get('page')]
     sitemap='<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'+''.join(f'<url><loc>{esc(data["profile"]["site_url"].rstrip("/")+"/"+path)}</loc><lastmod>{esc(data["profile"]["updated_iso"])}</lastmod></url>\n' for path in paths)+'</urlset>\n'
     (ROOT/'sitemap.xml').write_text(sitemap,encoding='utf-8')
     (ROOT/'robots.txt').write_text('User-agent: *\nAllow: /\nSitemap: '+data['profile']['site_url'].rstrip('/')+'/sitemap.xml\n',encoding='utf-8')
-    print(f'Built home, archive, {sum(bool(p.get("page")) for p in data["publications"])} project pages, 404, citations, and sitemap. {len(data["publications"])} records.')
+    print(f'Built orbit home, 4 destination pages, archive, {sum(bool(p.get("page")) for p in data["publications"])} project pages, 404, citations, and sitemap. {len(data["publications"])} records.')
 
 
 if __name__ == '__main__':
